@@ -21,9 +21,3 @@ staticfiles/
 env/
 venv/
 ENV/
-
-# VS Code
-.vscode/
-
-# macOS
-.DS_Store
