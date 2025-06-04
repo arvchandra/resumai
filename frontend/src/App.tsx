@@ -7,9 +7,9 @@ import JobPosting from "./components/JobPosting/JobPosting";
 
 function App() {
   const { isFetching, fetchedData: jobPostingText } = useFetch(
-      fetchJobPostingText,
-      'TeST'
-    );
+    fetchJobPostingText,
+    null
+  );
 
   return (
     <div className="App">
