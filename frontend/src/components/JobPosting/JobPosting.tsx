@@ -1,10 +1,7 @@
-interface JobPostingProps {
-    isFetching: boolean;
-    jobPostingText: string;
-}
+import type { JobPostingProps } from "../../interfaces/JobPosting"
 
-export default function JobPosting({ isFetching, jobPostingText }: JobPostingProps) {
+export default function JobPosting({ isFetching, jobPostingText } : JobPostingProps) {
     return (
-        <div>{jobPostingText}</div>
+        <div>{isFetching ? 'loading...' : jobPostingText}</div>
     )
 }
