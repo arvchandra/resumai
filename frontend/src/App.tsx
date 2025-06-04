@@ -1,22 +1,20 @@
+import useFetch from "./hooks/useFetch";
+import { fetchJobPostingText } from "./http";
+
 import "./App.css";
-import logo from "./logo.svg";
+import JobPosting from "./components/JobPosting/JobPosting";
+
 
 function App() {
+  const { isFetching, fetchedData: jobPostingText } = useFetch(
+      fetchJobPostingText,
+      'TeST'
+    );
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <JobPosting isFetching={isFetching} jobPostingText={jobPostingText} />
       </header>
     </div>
   );
