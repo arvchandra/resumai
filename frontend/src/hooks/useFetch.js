@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 
-import type { Error } from "../interfaces/Error";
-
-export default function useFetch(fetchFn: () => any, initialValue: string | null) {
+export default function useFetch(fetchFn, initialValue) {
   const [fetchedData, setFetchedData] = useState(initialValue);
   const [isFetching, setIsFetching] = useState(false);
-  const [error, setError] = useState<Error>();
+  const [error, setError] = useState();
 
   useEffect(() => {
     async function fetchData() {
