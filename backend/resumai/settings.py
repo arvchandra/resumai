@@ -20,9 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-to4l5j2v7ha*+!btj715!qhcla$$v7ramm6z0u_8z-c4*=o7ts"
-)
+SECRET_KEY = "django-insecure-to4l5j2v7ha*+!btj715!qhcla$$v7ramm6z0u_8z-c4*=o7ts"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -40,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "tailor",
+    "rest_framework",
 ]
 
 MIDDLEWARE = [
@@ -85,6 +84,17 @@ DATABASES = {
         "HOST": "localhost",
         "PORT": "5432",
     }
+}
+
+# Django REST Framework settings
+REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
 }
 
 
