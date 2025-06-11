@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import type { JobPostingProps } from "../../interfaces/JobPosting"
 
 export default function JobPosting({ isFetching, jobDescriptionText, error } : JobPostingProps) {
