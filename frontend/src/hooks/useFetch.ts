@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 
-import type { Error } from "../interfaces/Error";
-
-export default function useFetch(fetchFn: () => any, initialValue: string | null) {
-  const [fetchedData, setFetchedData] = useState(initialValue);
+export default function useFetch(fetchFn: () => any) {
+  const [fetchedData, setFetchedData] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
-  const [error, setError] = useState<Error>();
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -15,8 +13,13 @@ export default function useFetch(fetchFn: () => any, initialValue: string | null
         const data = await fetchFn();
         setFetchedData(data);
       } catch (error) {
-        setError({ message: error });
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('An error occurred.');
+        }
       }
+      
       setIsFetching(false);
     }
 

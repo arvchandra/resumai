@@ -1,4 +1,5 @@
 export interface JobPostingProps {
-    isFetching: boolean;
-    jobPostingText: string | null;
+  isFetching: boolean;
+  jobDescriptionText: string | null;
+  error: string;
 }
