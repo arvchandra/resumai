@@ -1,19 +1,20 @@
-import React, { useRef } from "react";
+import { use, useRef } from "react";
 
 import "./ResumeTailorForm.css";
 
 import ResumeSelectorUploader from "../ResumeSelectorUploader/ResumeSelectorUploader";
+import { ResumeContext } from "../../contexts/ResumeContext";
 
 
 export default function ResumeTailorForm() {
   const logRef = useRef<HTMLTextAreaElement>(null);
   const jobUrlRef = useRef<HTMLInputElement>(null);
 
-  const handleTailorClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    console.log(event.target);
+  const { resumeName } = use(ResumeContext);
 
+  const handleTailorClick = () => {
     if (logRef.current && jobUrlRef.current) {
-      const selectedResumeText = `Selected Resume:`;
+      const selectedResumeText = `Selected Resume: ${resumeName}`;
       const jobURLText = `Job Posting URL: ${jobUrlRef.current.value}`;
 
       logRef.current.value = `${selectedResumeText}\n${jobURLText}`;
