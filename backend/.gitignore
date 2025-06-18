@@ -22,3 +22,7 @@ output.txt
 env/
 venv/
 ENV/
+
+# Files
+*.pdf
+*.docx

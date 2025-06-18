@@ -1,5 +1,5 @@
 from django.urls import path
-from tailor.api.views import ParseJobPostingView
+from tailor.api.views import ParseJobPostingView, UserResumeListView
 
 urlpatterns = [
     path(
@@ -7,4 +7,10 @@ urlpatterns = [
         ParseJobPostingView.as_view(),
         name="job_posting_text",
     ),
+    path(
+        "api/users/<int:user_id>/resumes/",
+        UserResumeListView.as_view(),
+        name="user-resumes",
+    )
+
 ]
