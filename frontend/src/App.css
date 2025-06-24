@@ -10,3 +10,9 @@ body {
   justify-content: center;
   text-align: center;
 }
+
+.App {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}

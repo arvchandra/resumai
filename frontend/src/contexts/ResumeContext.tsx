@@ -31,7 +31,11 @@ function resumeReducer(state: ResumeState, action: ResumeAction) {
   return state;
 }
 
-export const ResumeContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface ContextProviderProps {
+  children: React.ReactNode;
+}
+
+export const ResumeContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
   const [resumeState, resumeDispatch] = useReducer(resumeReducer, {
     resumeName: '',
   })

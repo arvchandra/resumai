@@ -1,28 +1,27 @@
-// import useFetch from "./hooks/useFetch";
+import { useCallback } from "react";
+
+import SearchableDropdown from "./components/SearchableDropdown";
+import SortableUsersTable from "./components/SortableUsersTable";
+import UsersDropdown from "./components/UsersDropdown";
 
 import "./App.css";
 import "./assets/styles/shared.css";
 
-// import { fetchJobDescriptionText } from "./http";
-import { ResumeContextProvider } from "./contexts/ResumeContext";
+import type User from "./interfaces/User";
 
-// import JobPosting from "./components/JobPosting/JobPosting";
-import ResumeTailorForm from "./components/ResumeTailorForm/ResumeTailorForm";
+import { usersData, usersDataAlt, usersTableData } from "./mocks/mockData";
 
 function App() {
-  // const { isFetching, fetchedData: data, error } = useFetch(fetchJobDescriptionText);
-
-  // let jobDescriptionText = null;
-  // if (data) {
-  //   jobDescriptionText = data['jobDescriptionText'];
-  // }
+  const handleUserSelect = useCallback((user: User) => {
+    alert(`Selected: ${user.name}`);
+  }, []);
 
   return (
     <div className="App">
-      {/* <JobPosting isFetching={isFetching} jobDescriptionText={jobDescriptionText} error={error} /> */}
-      <ResumeContextProvider>
-        <ResumeTailorForm />
-      </ResumeContextProvider>
+      <UsersDropdown id="usersSelect" users={usersData} />
+      <UsersDropdown id="usersSelectAlt" users={usersDataAlt} />
+      <SearchableDropdown id="searchableUsersSelect" items={usersData} />
+      <SortableUsersTable users={usersTableData} handleUserSelect={handleUserSelect} />
     </div>
   );
 }

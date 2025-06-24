@@ -3,7 +3,7 @@ export async function fetchJobDescriptionText() {
   const jsonData = await response.json();
 
   if (!response.ok) {
-    throw new Error("Failed to fetch job posting text");
+    throw new Error(`Failed to fetch job posting text: ${response.status}`);
   }
 
   return jsonData;

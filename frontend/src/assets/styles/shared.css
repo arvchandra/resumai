@@ -47,8 +47,8 @@ button:focus {
 }
 
 .form-field input:focus {
-  outline: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  outline: none;
 }
 
 .form-field select {
@@ -66,6 +66,89 @@ button:focus {
 }
 
 .form-field select:focus {
-  outline: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.dropdown-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+  position: relative;
+  text-align: left;
+  width: 200px;
+}
+
+.dropdown-container label {
+  color: #000;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.dropdown-container select {
+  font-size: 1rem;
+  padding: 0.5rem;
+}
+
+/* .dropdown-container select.searchable {
+  position: absolute;
+  top: 100%;
+} */
+
+.dropdown-container ul {
+  background-color: #fff;
+  border: 1px #767676 solid;
+  border-top: none;
+  color: black;
+  list-style: none;
+  max-height: 160px;
+  overflow-y: scroll;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  top: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+.dropdown-container li {
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem;
+}
+
+.dropdown-container li:hover {
+  background-color: #e6e6e6;
+}
+
+
+.dropdown-container input {
+  display: block;
+  font-size: 1rem;
+  padding: 0.5rem;
+}
+
+.sortableTable {
+  background-color: white;
+  color: black;
+}
+
+.sortableTable th, 
+.sortableTable td {
+  text-align: left;
+  padding: 0.5rem;
+}
+
+.sortableTable td a {
+  color: black;
+  cursor: pointer;
+}
+
+th.sortableColumn {
+  cursor: pointer;
+}
+
+.sortableTable td a:hover {
+  text-decoration: underline;
 }
