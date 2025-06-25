@@ -25,22 +25,28 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({ id, items }) =>
     const inputValue = event.target.value;
     setSearchTerm(inputValue);
 
-    if (inputValue !== '') {
+    if (inputValue.trim().length > 0) {
       setShowDropdown(true);
-    } else {
+    }
+    else {
       setShowDropdown(false);
     }
   }
 
-  // Sort the dropdown items initially
+  // Initial instantiation of alphabetically sorted items
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => sortNamesFunction(a.name, b.name));
   }, [items]);
 
   // Filter the dropdown items based on the search term (case-insensitive)
-  const filteredItems = sortedItems.filter((item) => {
-    if (searchTerm.trim() !== '') {
+  const filteredItems = sortedItems.filter((item, index) => {
+    if (searchTerm.length > 0) {
       return item.name.toLowerCase().includes(searchTerm.trim().toLowerCase());
+    } 
+
+    // For empty search term, return top 5 items
+    if (index < 10) {
+      return true;
     }
   });
 
@@ -56,16 +62,33 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({ id, items }) =>
     console.log(`New selection: ${item?.name}`);
   }
 
+  // Show first 5 users when search bar is focused
+  const handleSearchBarFocus = () => {
+    setShowDropdown(true);
+  }
+
+  // Hide the dropdown if focus is no longer on the search bar
+  const handleSearchBarBlur = () => {
+    setShowDropdown(false);
+  }
+
   return (
     <div className="dropdown-container">
       <label htmlFor={searchInputId}>Select item:</label>
-      <input id={searchInputId} type="text" onChange={handleSearchTermChange} value={searchTerm} />
+      <input 
+        id={searchInputId} 
+        type="search"
+        value={searchTerm} 
+        onChange={handleSearchTermChange} 
+        onFocus={handleSearchBarFocus}
+        onBlur={handleSearchBarBlur}
+      />
       {showDropdown && (
           <ul>
             {
               filteredItems.length > 0 ? (
                 filteredItems.map((item) => {
-                  return <li key={item.id} value={item.id} onClick={() => handleItemSelect(item.id)}>
+                  return <li key={item.id} value={item.id} onMouseDown={() => handleItemSelect(item.id)}>
                     {item.name}
                   </li>;
                 })

@@ -10,6 +10,10 @@ export const usersData = [
   {id: 4, name: 'Arthur Lang'},
   {id: 5, name: 'Joseph Campbell'},
   {id: 6, name: 'Jamie Arturo'},
+  {id: 7, name: 'Cary Grant'},
+  {id: 8, name: 'Mark Miller'},
+  {id: 9, name: 'Bradley Schafar'},
+  {id: 10, name: 'Tom Waters'},
 ];
 
 export const usersDataAlt = [
