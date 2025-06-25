@@ -123,6 +123,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Media storage location
+MEDIA_ROOT = BASE_DIR / "uploads"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
