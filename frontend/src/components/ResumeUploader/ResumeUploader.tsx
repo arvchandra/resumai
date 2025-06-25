@@ -16,8 +16,6 @@ type FormDataKeys = keyof FilePayload
 
 
 export default function ResumeUploader() {
-  // const [file, setFile] = useState<File | undefined>();
-
   const handleUpload = async (file: File) => {
     if (file) {
       const formData = new FormData;
@@ -39,8 +37,6 @@ export default function ResumeUploader() {
   }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    // setFile(acceptedFiles[0]);
-
     handleUpload(acceptedFiles[0]);
     // const file = new FileReader;
 
@@ -65,15 +61,6 @@ export default function ResumeUploader() {
     }
   });
 
-  
-
-  function handleOnChange(e: React.FormEvent<HTMLInputElement>) {
-    const target = e.target as HTMLInputElement & {
-      files: FileList;
-    }
-
-    setFile(target.files[0]);
-  }
 
   return (
     <div {...getRootProps()}>
@@ -85,15 +72,5 @@ export default function ResumeUploader() {
       }
 
     </div>
-    // <div className="form-field">
-    //   <label htmlFor="resume">Upload Resume</label>
-    //   <input
-    //     id="resume" 
-    //     type="file" 
-    //     name="resume" 
-    //     onChange={handleOnChange} 
-    //     accept=".doc,.docx,.pdf"
-    //   />
-    // </div>
   )
 }
