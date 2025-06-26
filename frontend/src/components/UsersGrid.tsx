@@ -24,22 +24,23 @@
     }
   },
 */
-
 import UserCard from './UserCard';
 
 import './styles/UserGrid.css';
 
-import type { User } from './interfaces/User';
+import { useUsersContext } from './contexts/UsersContext';
 
-interface UsersGridProps {
-  users: User[];
-}
+const UsersGrid = () => {
+  const { users } = useUsersContext();
 
-const UsersGrid: React.FC<UsersGridProps> = ({ users }) => {
+  if (users.length === 0) {
+    return <span>No users to display.</span>
+  }
+
   return (
     <div className="usersGrid"> 
       {users.map((user) => {
-        return <UserCard user={user} />;
+        return <UserCard key={user.id} user={user} />;
       })}
     </div>
   );

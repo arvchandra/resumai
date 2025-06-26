@@ -5,6 +5,8 @@ import { useCallback } from "react";
 // import UsersDropdown from "./components/UsersDropdown";
 import ReactPractice from './components/ReactPractice';
 
+import { UsersContextProvider } from "./components/contexts/UsersContext";
+
 import "./App.css";
 import "./assets/styles/shared.css";
 
@@ -23,7 +25,9 @@ function App() {
       <UsersDropdown id="usersSelectAlt" users={usersDataAlt} /> 
       <SearchableDropdown id="searchableUsersSelect" items={usersData} />
       <SortableUsersTable users={usersTableData} handleUserSelect={handleUserSelect} /> */}
-      <ReactPractice />
+      <UsersContextProvider>
+        <ReactPractice />
+      </UsersContextProvider>
     </div>
   );
 }
