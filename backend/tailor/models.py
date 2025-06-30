@@ -3,6 +3,7 @@ from django.db import models
 
 from tailor.mixins import TimestampMixin
 
+
 class Resume(TimestampMixin, models.Model):
     name = models.CharField()
     description = models.CharField(blank=True, null=True)
