@@ -48,6 +48,3 @@ class LinkedInPosting(JobPosting):
         job_posting_text = job_posting_html.get_text(strip=True, separator='\n') if job_posting_html else ""
 
         return job_posting_text
-
-
-
