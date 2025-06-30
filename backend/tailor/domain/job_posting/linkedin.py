@@ -32,22 +32,22 @@ class LinkedInPosting(JobPosting):
                 # When URL is of the format https://www.linkedin.com/jobs/view/4259447405/?alternateChannel=search
                 return path_array[-1] if path_array[-2] == "view" else None
         except KeyError as e:
-            # log error
+            # TODO log error
             pass
 
-    def parse(self):
+    def parse_job_posting(self):
         # Will attempt to try without headless browsers since it's possible the problem only
         # emerges when we try expired applications. Will test with this for now
-        posting_url = f"{JOB_POSTING_PATH}/{self.job_id}"
-        response = requests.get(posting_url)
+        job_posting_url = f"{JOB_POSTING_PATH}/{self.job_id}"
+        response = requests.get(job_posting_url)
 
         html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
 
-        posting_html = soup.find('div', class_='description__text')
-        posting_text = posting_html.get_text(strip=True, separator='\n') if description_html else ""
+        job_posting_html = soup.find('div', class_='description__text')
+        job_posting_text = job_posting_html.get_text(strip=True, separator='\n') if job_posting_html else ""
 
-        return posting_text
+        return job_posting_text
 
 
 

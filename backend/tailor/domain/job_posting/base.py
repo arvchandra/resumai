@@ -7,5 +7,5 @@ class JobPosting(ABC):
         pass
 
     @abstractmethod
-    def parse(self):
+    def parse_job_posting(self):
         pass

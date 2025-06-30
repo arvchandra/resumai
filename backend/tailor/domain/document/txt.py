@@ -8,6 +8,3 @@ class TxtDocument(Document):
 
     def generate_copy(self):
         pass
-
-
-!f() { git stash && git checkout master && git pull && git checkout - && git merge master && git stash pop; }; f
