@@ -121,6 +121,7 @@ class TailorResumeView(APIView):
         except Resume.DoesNotExist:
             raise NotFound("Resume not found.")
         
+        # TODO: Move this logic into JobPosting class
         # Validate that the job posting URL is a LinkedIn URL
         if not "linkedin.com" in job_posting_url:
             raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
