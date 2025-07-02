@@ -1,7 +1,7 @@
 import os
 
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import  NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -50,7 +50,7 @@ class UserResumeUploadView(APIView):
     if the upload was successful.
 
     Example request:
-        POST /tailor/user/<int:user_id>/resume/upload/
+        POST /tailor/users/<int:user_id>/resume/upload/
         Content-Type: multipart/form-data
         Body:
             file: <uploaded_file>
@@ -82,3 +82,65 @@ class UserResumeUploadView(APIView):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TailorResumeView(APIView):
+    """
+    API endpoint that performs the resume tailoring tasks.
+
+    - Accepts a POST request with a payload containing a Resume ID and a Job Posting URL.
+    - Builds a prompt containing the parsed resume text and job description, and sends
+      the request to the AI API.
+    - Receives the response from the AI API and formats the tailored resume content.
+    - Responds with the formatted tailored resume content if the process was successful.
+
+    Example request:
+        POST /tailor/users/<int:user_id>/tailor-resume
+        Content-Type: application/json
+        Body:
+            {
+                "resume_id": 123,
+                "job_posting_url": "https://www.linkedin.com/jobs/view/4117993213"
+            }
+
+    Responses:
+        200 OK
+        400 Bad Request
+    """
+    def post(self, request, *args, **kwargs):
+        user_id: int = int(self.kwargs["user_id"])
+        resume_id: int = int(request.data["resume_id"])
+        job_posting_url: str = request.data["job_posting_url"]
+
+        # Validate that logged in user matches the user referenced in the request URL
+        # TODO: request.user.id == user_id  (must implement user login/auth first)
+
+        # Validate that the resume exists and it is for the current user
+        try:
+            resume = Resume.objects.get(id=resume_id, user_id=user_id)
+        except Resume.DoesNotExist:
+            raise NotFound("Resume not found.")
+        
+        # TODO: Move this logic into JobPosting class
+        # Validate that the job posting URL is a LinkedIn URL
+        if not "linkedin.com" in job_posting_url:
+            raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
+        
+        # Call resume parser
+
+        # Call job posting scraper + parser
+
+        # Generate prompt for AI API
+
+        # Send request to AI API and receive tailored resume response
+
+        # Format and return tailored resume response
+
+        return Response(
+            {
+                "user_id": user_id,
+                "resume_name": resume.name,
+                "job_posting_url": job_posting_url,
+            },
+            status=status.HTTP_200_OK
+        )
