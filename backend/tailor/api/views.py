@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 
 from tailor.api.serializers import FileUploadSerializer, ResumeSerializer
+from tailor.domain.document import DocumentFactory
+from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume
 
 
@@ -65,14 +66,15 @@ class UserResumeUploadView(APIView):
             user_id = self.kwargs["user_id"]
             uploaded_file = serializer.validated_data["file"]
 
-            # Get the file extension
-            _, extension = os.path.splitext(uploaded_file.name)  # includes the dot (e.g., '.jpg')
+            # Get the file type (uppercase file extension)
+            _, extension = os.path.splitext(uploaded_file.name)
+            file_type = str(extension[1:]).upper()  # excludes the dot (e.g., 'DOCX')
 
             # Save the file via the Resume model
             new_resume_upload = Resume()
             new_resume_upload.name = uploaded_file.name
             new_resume_upload.file = uploaded_file
-            new_resume_upload.file_type = str(extension).upper()
+            new_resume_upload.file_type = file_type
             new_resume_upload.user = User.objects.get(id=user_id) # TODO: Get user from auth
             new_resume_upload.save()
 
@@ -116,6 +118,7 @@ class TailorResumeView(APIView):
         # TODO: request.user.id == user_id  (must implement user login/auth first)
 
         # Validate that the resume exists and it is for the current user
+        resume = None
         try:
             resume = Resume.objects.get(id=resume_id, user_id=user_id)
         except Resume.DoesNotExist:
@@ -126,9 +129,13 @@ class TailorResumeView(APIView):
         if not "linkedin.com" in job_posting_url:
             raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
         
-        # Call resume parser
+        # Get text content of resume
+        resume_document = DocumentFactory.create(resume.file)
+        resume_text = resume_document.get_text()
 
         # Call job posting scraper + parser
+        linked_in_job_posting = LinkedInPosting(job_posting_url)
+        job_posting_text = linked_in_job_posting.get_text()
 
         # Generate prompt for AI API
 
@@ -141,6 +148,8 @@ class TailorResumeView(APIView):
                 "user_id": user_id,
                 "resume_name": resume.name,
                 "job_posting_url": job_posting_url,
+                "resume_text": resume_text,
+                "job_posting_text": job_posting_text,
             },
             status=status.HTTP_200_OK
         )
