@@ -3,9 +3,9 @@ import ResumeUploader from "../ResumeUploader/ResumeUploader";
 import { useState } from "react";
 
 export default function ResumeSelectorUploader() {
-    const [resumeExists, setResumeExists] = useState(false);
+    const [resumeExists, setResumeExists] = useState(true);
 
-    function handleCheckboxChange(e: React.ChangeEvent<HTMLInputElement>) {
+    function handleCheckboxChange() {
         setResumeExists(!resumeExists);
     }
 
@@ -14,7 +14,7 @@ export default function ResumeSelectorUploader() {
           {resumeExists && <ResumeSelector />}
           {!resumeExists && <ResumeUploader />}
           <label>
-            <input type="checkbox" onChange={handleCheckboxChange}  />Check here to toggle resume uploader
+            <input type="checkbox" onChange={handleCheckboxChange} />Check here to toggle resume uploader
           </label>
         </>
     )

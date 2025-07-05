@@ -13,12 +13,12 @@ urlpatterns = [
         name="job_posting_text",
     ),
     path(
-        "users/<int:user_id>/resume/",
+        "users/<int:user_id>/resumes/",
         UserResumeListView.as_view(),
         name="user-resumes",
     ),
     path(
-        "users/<int:user_id>/resume/upload",
+        "users/<int:user_id>/resumes/upload",
         UserResumeUploadView.as_view(),
         name="user-resume-upload",
     ),
