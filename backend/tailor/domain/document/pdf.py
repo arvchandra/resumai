@@ -1,10 +1,11 @@
-from .base import Document
 import pymupdf4llm
+
+from .base import Document
 
 
 class PdfDocument(Document):
-    def parse_file_text(self, file):
-        print(pymupdf4llm.to_markdown(file))
+    def get_text(self):
+        return pymupdf4llm.to_markdown(self.file.path)
 
     def generate_copy(self):
         pass
