@@ -14,13 +14,12 @@ function App() {
   const { setResumes, setIsFetchingResumes } = useResumesContext();
   const { isFetching, fetchedData } = useFetch(fetchUserResumes); //TODO: Error handling
 
-  // Update the resumes' fetching status to render the
-  // resumes dropdown appropriately.
+  // Update the fetching status in the resumes context
   useEffect(() => {
     setIsFetchingResumes(isFetching);
   }, [isFetching, setIsFetchingResumes]);
 
-  // Update the set of user resumes when fetched.
+  // Update the resumes array in the resumes context
   useEffect(() => {
     if (fetchedData) {
       setResumes(fetchedData);

@@ -38,7 +38,7 @@ export default function ResumeSelector() {
         {resumes.map((resume) => {
           return (
             <option key={resume.id} value={resume.id}>
-              {resume.name}
+              {resume.name}{resume.is_default && " (default)"}
             </option>
           )
         })}
