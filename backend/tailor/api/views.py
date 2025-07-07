@@ -111,6 +111,7 @@ class TailorResumeView(APIView):
         400 Bad Request
     """
     def post(self, request, *args, **kwargs):
+        print("we made it here")
         user_id: int = int(self.kwargs["user_id"])
         resume_id: int = int(request.data["resume_id"])
         job_posting_url: str = request.data["job_posting_url"]
@@ -135,8 +136,8 @@ class TailorResumeView(APIView):
         resume_text = resume_document.get_text()
 
         # Call job posting scraper + parser
-        linked_in_job_posting = LinkedInPosting(job_posting_url)
-        job_posting_text = linked_in_job_posting.get_text()
+        linkedin_job_posting = LinkedInPosting(job_posting_url)
+        job_posting_text = linkedin_job_posting.get_text()
 
         # Send request to AI API and receive tailored resume response -- Max
         client = OpenAI()
@@ -146,13 +147,14 @@ class TailorResumeView(APIView):
                 "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
                 "version": "5",
                 "variables": {
-                    "job_posting": "hello",
-                    "resume": "world"
+                    "job_posting": job_posting_text,
+                    "resume": resume_text
                 }
             }
         )
 
         # Format and return tailored resume response -- Max
+        output_text = response["output"][0]["content"][0]["text"]
 
         return Response(
             {
@@ -161,6 +163,7 @@ class TailorResumeView(APIView):
                 "job_posting_url": job_posting_url,
                 "resume_text": resume_text,
                 "job_posting_text": job_posting_text,
+                "output_text": output_text,
             },
             status=status.HTTP_200_OK
         )
