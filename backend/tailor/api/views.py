@@ -1,4 +1,5 @@
 import os
+from openai import OpenAI
 
 from rest_framework import status
 from rest_framework.exceptions import  NotFound, ValidationError
@@ -126,7 +127,7 @@ class TailorResumeView(APIView):
         
         # TODO: Move this logic into JobPosting class
         # Validate that the job posting URL is a LinkedIn URL
-        if not "linkedin.com" in job_posting_url:
+        if "linkedin.com" not in job_posting_url:
             raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
         
         # Get text content of resume
@@ -137,11 +138,21 @@ class TailorResumeView(APIView):
         linked_in_job_posting = LinkedInPosting(job_posting_url)
         job_posting_text = linked_in_job_posting.get_text()
 
-        # Generate prompt for AI API
+        # Send request to AI API and receive tailored resume response -- Max
+        client = OpenAI()
 
-        # Send request to AI API and receive tailored resume response
+        response = client.responses.create(
+            prompt={
+                "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
+                "version": "5",
+                "variables": {
+                    "job_posting": "hello",
+                    "resume": "world"
+                }
+            }
+        )
 
-        # Format and return tailored resume response
+        # Format and return tailored resume response -- Max
 
         return Response(
             {

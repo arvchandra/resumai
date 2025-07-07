@@ -38,14 +38,6 @@ export default function ResumeUploader() {
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     handleUpload(acceptedFiles[0]);
-    // const file = new FileReader;
-
-    // file.readAsDataURL(acceptedFiles[0]);
-
-    // file.onload = () => {
-    //   const base64String = file.result as string;
-    //   console.log(base64String);
-    // }
   }, []);
 
 
