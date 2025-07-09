@@ -1,6 +1,6 @@
 import os
 
-from backend.tailor.domain.document.constants import DOCX, PDF, TEX, TXT
+from tailor.domain.document.constants import DOCX, PDF, TEX, TXT
 from tailor.domain.document import (
     Document,
     DocxDocument,

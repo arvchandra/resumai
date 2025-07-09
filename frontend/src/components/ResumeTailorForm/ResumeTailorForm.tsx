@@ -3,7 +3,7 @@ import { use, useRef, useState } from "react";
 import "./ResumeTailorForm.css";
 
 import ResumeSelectorUploader from "../ResumeSelectorUploader/ResumeSelectorUploader";
-import { ResumeContext } from "../../contexts/ResumeContext";
+import { ResumesContext } from "../../contexts/ResumesContext";
 
 
 export default function ResumeTailorForm() {
@@ -12,7 +12,7 @@ export default function ResumeTailorForm() {
   const logRef = useRef<HTMLTextAreaElement>(null);
   const jobUrlRef = useRef<HTMLInputElement>(null);
 
-  const { resumeName } = use(ResumeContext);
+  const { selectedResume } = use(ResumesContext);
 
   const handleTailorResumeClick = async () => {
     setLoading(true);
@@ -28,7 +28,7 @@ export default function ResumeTailorForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          resume_id: 7,  // TODO: Replace mok data with selected resume id
+          resume_id: selectedResume?.id,
           job_posting_url: jobUrlRef.current?.value
         })
       });
@@ -41,7 +41,7 @@ export default function ResumeTailorForm() {
       const data = await response.json();
       console.log(data);
       if (logRef.current) {
-        logRef.current.value = `Result of tailoring ${resumeName}:\n${JSON.stringify(data)}`;
+        logRef.current.value = `Result of tailoring ${selectedResume?.name}:\n${JSON.stringify(data)}`;
       }
     } catch (err) {
       console.log(err);

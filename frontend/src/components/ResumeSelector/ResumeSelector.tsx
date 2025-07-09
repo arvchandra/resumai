@@ -1,46 +1,63 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
-import type { JSX } from "react";
-
-import { ResumeContext } from "../../contexts/ResumeContext";
-
-import { resumesData } from "../../mocks/mockData";
+import { useResumesContext } from "../../contexts/ResumesContext";
 
 export default function ResumeSelector() {
-  const { updateResumeName } = use(ResumeContext);
-  const [defaultResume, setDefaultResume] = useState('');
-  const [resumeOptions, setResumeOptions] = useState<JSX.Element[]>([]);
+  const { resumes, isFetchingResumes, selectedResume, setSelectedResume } = useResumesContext();
 
+  // Set selected resume via dropdown selection
   const handleResumeSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
-      updateResumeName(event.target.value);
+      const selectedResumeID = Number.parseInt(event.target.value);
+      const selectedResume = resumes.find(resume => resume.id == selectedResumeID);
+      if (selectedResume) {
+        setSelectedResume(selectedResume);
+      }
   }
 
+  // Set the default resume as the selected resume on initial render
   useEffect(() => {
-    const resumeOptions: JSX.Element[] = [];
-
-    resumesData.forEach((resume) => {
-      if (resume.default) {
-        setDefaultResume(resume.name);
-        updateResumeName(resume.name);
+    if (!isFetchingResumes && resumes.length > 0 && !selectedResume) {
+      const default_resume = resumes.find(resume => resume.is_default);
+      if (default_resume) {
+        setSelectedResume(default_resume);
       }
-      
-      resumeOptions.push(
-        <option key={resume.id} value={resume.name}>
-          {resume.name}
-        </option>
-      );
-      setResumeOptions(resumeOptions);
-    });
-  }, [updateResumeName]);
-
+    }
+  }, [resumes, isFetchingResumes, selectedResume, setSelectedResume]);
   
+  // Construct dropdown for resume selection
+  let resumesDropdown = null;
+  if (isFetchingResumes) {
+    resumesDropdown = ( 
+      <select id="resume" name="resume" disabled>
+        <option>Loading...</option>
+      </select>
+    );
+  } else if (resumes.length > 0) {
+    resumesDropdown = (
+      <select id="resume" name="resume" value={selectedResume?.id ?? ""} onChange={handleResumeSelect}>
+        {resumes.map((resume) => {
+          return (
+            <option key={resume.id} value={resume.id}>
+              {resume.name}{resume.is_default && " (default)"}
+            </option>
+          )
+        })}
+      </select>
+    );
+  } else {
+    resumesDropdown = (
+      <>
+        <select id="resume" name="resume" disabled>
+          <option>No resumes available</option>
+        </select>
+      </>
+    )
+  }
 
   return (
     <div className="form-field">
-      <label htmlFor="resume">Choose a resume:</label>
-      <select id="resume" name="resume" value={defaultResume} onChange={handleResumeSelect}>
-        {resumeOptions}
-      </select>
+      <label htmlFor="resume">Select a resume:</label>
+      {resumesDropdown}
     </div>
   )
 }

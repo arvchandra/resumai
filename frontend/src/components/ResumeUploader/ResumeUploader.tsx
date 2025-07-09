@@ -22,7 +22,7 @@ export default function ResumeUploader() {
       formData.append('file', file);
 
       try {
-        const result = await fetch('http://127.0.0.1:8000/tailor/users/2/resume/upload', {
+        const result = await fetch('http://127.0.0.1:8000/tailor/users/2/resumes/upload', {
           method: 'POST',
           body: formData
         });
