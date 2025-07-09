@@ -2,7 +2,7 @@ import os
 from openai import OpenAI
 
 from rest_framework import status
-from rest_framework.exceptions import  NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -10,11 +10,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from django.contrib.auth.models import User
+from django.conf import settings
 
 from tailor.api.serializers import FileUploadSerializer, ResumeSerializer
 from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume
+
+class ParsingError(Exception):
+    pass
 
 
 class ParseJobPostingView(APIView):
@@ -61,6 +65,7 @@ class UserResumeUploadView(APIView):
         200 OK: {"filename": "<uploaded_file_name>"}
         400 Bad Request: {"file": ["This field is required."]}
     """
+
     def post(self, request, *args, **kwargs):
         serializer = FileUploadSerializer(data=request.data)
         if serializer.is_valid():
@@ -76,14 +81,14 @@ class UserResumeUploadView(APIView):
             new_resume_upload.name = uploaded_file.name
             new_resume_upload.file = uploaded_file
             new_resume_upload.file_type = file_type
-            new_resume_upload.user = User.objects.get(id=user_id) # TODO: Get user from auth
+            new_resume_upload.user = User.objects.get(id=user_id)  # TODO: Get user from auth
             new_resume_upload.save()
 
             return Response(
                 {"user_id": user_id},
                 status=status.HTTP_200_OK
             )
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -110,8 +115,8 @@ class TailorResumeView(APIView):
         200 OK
         400 Bad Request
     """
+
     def post(self, request, *args, **kwargs):
-        print("we made it here")
         user_id: int = int(self.kwargs["user_id"])
         resume_id: int = int(request.data["resume_id"])
         job_posting_url: str = request.data["job_posting_url"]
@@ -125,45 +130,62 @@ class TailorResumeView(APIView):
             resume = Resume.objects.get(id=resume_id, user_id=user_id)
         except Resume.DoesNotExist:
             raise NotFound("Resume not found.")
-        
+
         # TODO: Move this logic into JobPosting class
         # Validate that the job posting URL is a LinkedIn URL
         if "linkedin.com" not in job_posting_url:
             raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
-        
-        # Get text content of resume
-        resume_document = DocumentFactory.create(resume.file)
-        resume_text = resume_document.get_text()
 
-        # Call job posting scraper + parser
-        linkedin_job_posting = LinkedInPosting(job_posting_url)
-        job_posting_text = linkedin_job_posting.get_text()
+        try:
+            # Get text content of resume
+            resume_document = DocumentFactory.create(resume.file)
+            resume_text = resume_document.get_text()
 
-        # Send request to AI API and receive tailored resume response -- Max
-        client = OpenAI()
+            if not resume_text:
+                raise ParsingError("Unable to parse resume")
 
-        response = client.responses.create(
-            prompt={
-                "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-                "version": "5",
-                "variables": {
-                    "job_posting": job_posting_text,
-                    "resume": resume_text
+
+            # Call job posting scraper + parser
+            linkedin_job_posting = LinkedInPosting(job_posting_url)
+            job_posting_text = linkedin_job_posting.get_text()
+
+            # TODO replace with error handler
+            if not job_posting_text:
+                raise ParsingError("Unable to parse job posting")
+
+            # Send request to AI API and receive tailored resume response -- Max
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+            response = client.responses.create(
+                prompt={
+                    "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
+                    "version": "5",
+                    "variables": {
+                        "job_posting": job_posting_text,
+                        "resume": resume_text
+                    }
                 }
-            }
-        )
+            )
 
-        # Format and return tailored resume response -- Max
-        output_text = response["output"][0]["content"][0]["text"]
+            if not response.output_text:
+                # this should
+                raise ParsingError("Unable to parse resume")
 
-        return Response(
-            {
-                "user_id": user_id,
-                "resume_name": resume.name,
-                "job_posting_url": job_posting_url,
-                "resume_text": resume_text,
-                "job_posting_text": job_posting_text,
-                "output_text": output_text,
-            },
-            status=status.HTTP_200_OK
-        )
+            return Response(
+                {
+                    "user_id": user_id,
+                    "resume_name": resume.name,
+                    "job_posting_url": job_posting_url,
+                    "resume_text": resume_text,
+                    "job_posting_text": job_posting_text,
+                    "output_text": response.output_text,
+                },
+                status=status.HTTP_200_OK
+            )
+        except ParsingError as error:
+            return Response(
+                {
+                    "error": error
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

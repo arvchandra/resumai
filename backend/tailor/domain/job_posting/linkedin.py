@@ -13,14 +13,13 @@ class LinkedInPosting(JobPosting):
             url = urlparse(self.url)
             query_params = parse_qs(url.query)
             path_array = url.path.split('/')
-            job_id_query_bytes = bytes(JOB_ID_QUERY_PARAM, encoding="utf-8")
 
             # When URL is of the format https://www.linkedin.com/jobs/collections/recommended/?currentJobId=4259433658
-            if query_params.get(job_id_query_bytes):
-                return query_params[job_id_query_bytes]
+            if query_params.get(JOB_ID_QUERY_PARAM):
+                return query_params[JOB_ID_QUERY_PARAM][0]
             else:
                 # When URL is of the format https://www.linkedin.com/jobs/view/4259447405/?alternateChannel=search
-                return path_array[-1] if path_array[-2] == "view" else None
+                return path_array[-2] if path_array[-3] == "view" else None
         except KeyError as e:
             # TODO log error
             pass
@@ -28,6 +27,11 @@ class LinkedInPosting(JobPosting):
     def get_text(self):
         # Will attempt to try without headless browsers since it's possible the problem only
         # emerges when we try expired applications. Will test with this for now
+
+        if not self.job_id:
+            print("unable to parse Job ID")
+            return
+
         job_posting_url = f"{JOB_POSTING_PATH}/{self.job_id}"
         response = requests.get(job_posting_url)
 
