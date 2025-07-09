@@ -140,24 +140,18 @@ class TailorResumeView(APIView):
             # Get text content of resume
             resume_document = DocumentFactory.create(resume.file)
             resume_text = resume_document.get_text()
-
             if not resume_text:
                 raise ParsingError("Unable to parse resume")
-
 
             # Call job posting scraper + parser
             linkedin_job_posting = LinkedInPosting(job_posting_url)
             job_posting_text = linkedin_job_posting.get_text()
-
-            # TODO replace with error handler
             if not job_posting_text:
                 raise ParsingError("Unable to parse job posting")
 
             # Send request to AI API and receive tailored resume response -- Max
             client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-            response = client.responses.create(
-                prompt={
+            prompt = {
                     "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
                     "version": "5",
                     "variables": {
@@ -165,11 +159,7 @@ class TailorResumeView(APIView):
                         "resume": resume_text
                     }
                 }
-            )
-
-            if not response.output_text:
-                # this should
-                raise ParsingError("Unable to parse resume")
+            response = client.responses.create(prompt=prompt)
 
             return Response(
                 {
