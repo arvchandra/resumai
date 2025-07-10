@@ -141,12 +141,15 @@ class TailorResumeView(APIView):
             # Get text content of resume
             resume_document = DocumentFactory.create(resume.file)
             resume_text = resume_document.get_text()
+            print("made it to resume parsing")
             if not resume_text:
                 raise ParsingError("Unable to parse resume")
 
             # Call job posting scraper + parser
+            print("made it to job parsing")
             linkedin_job_posting = LinkedInPosting(job_posting_url)
             job_posting_text = linkedin_job_posting.get_text()
+            print(job_posting_text)
             if not job_posting_text:
                 raise ParsingError("Unable to parse job posting")
 
