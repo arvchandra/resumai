@@ -17,6 +17,7 @@ from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume
 
+
 class ParsingError(Exception):
     pass
 
@@ -150,17 +151,22 @@ class TailorResumeView(APIView):
                 raise ParsingError("Unable to parse job posting")
 
             # Send request to AI API and receive tailored resume response -- Max
-            client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            prompt = {
-                    "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-                    "version": "5",
-                    "variables": {
-                        "job_posting": job_posting_text,
-                        "resume": resume_text
-                    }
-                }
-            response = client.responses.create(prompt=prompt)
+            # client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            # prompt = {
+            #         "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
+            #         "version": "5",
+            #         "variables": {
+            #             "job_posting": job_posting_text,
+            #             "resume": resume_text
+            #         }
+            #     }
+            # response = client.responses.create(prompt=prompt)
 
+            # print(response.output_text)
+            # if response.output_text:
+            #     resume_document.generate_copy(response.output_text)
+
+            resume_document.generate_copy()
             return Response(
                 {
                     "user_id": user_id,
@@ -168,7 +174,7 @@ class TailorResumeView(APIView):
                     "job_posting_url": job_posting_url,
                     "resume_text": resume_text,
                     "job_posting_text": job_posting_text,
-                    "output_text": response.output_text,
+                    # "output_text": response.output_text,
                 },
                 status=status.HTTP_200_OK
             )
