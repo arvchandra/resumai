@@ -1,4 +1,5 @@
 import os
+import json
 
 from rest_framework import status
 from rest_framework.exceptions import  NotFound, ValidationError
@@ -78,8 +79,11 @@ class UserResumeUploadView(APIView):
             new_resume_upload.user = User.objects.get(id=user_id) # TODO: Get user from auth
             new_resume_upload.save()
 
+            resume_serializer = ResumeSerializer(new_resume_upload)
+            resume_json_data = {"uploadedResume": resume_serializer.data}
+            
             return Response(
-                {"user_id": user_id},
+                resume_json_data,
                 status=status.HTTP_200_OK
             )
         
