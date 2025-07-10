@@ -11,9 +11,9 @@ class LinkedInPosting(JobPosting):
     def format_url(self, url):
         try:
             parsed_url = urlparse(url)
-            full_path = urljoin(url, parsed_url.path)
 
             # When URL is of the format https://www.linkedin.com/jobs/collections/recommended/?currentJobId=4259433658
+            full_path = urljoin(url, parsed_url.path)
             if JOB_POSTING_PATH in full_path:
                 return full_path
 
