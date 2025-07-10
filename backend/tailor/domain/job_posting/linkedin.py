@@ -12,7 +12,7 @@ class LinkedInPosting(JobPosting):
         try:
             parsed_url = urlparse(url)
 
-            # When URL is of the format https://www.linkedin.com/jobs/collections/recommended/?currentJobId=4259433658
+            # When URL is of the format https://www.linkedin.com/jobs/view/4259447405/?alternateChannel=search
             full_path = urljoin(url, parsed_url.path)
             if JOB_POSTING_PATH in full_path:
                 return full_path
