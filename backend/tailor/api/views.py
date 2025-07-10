@@ -169,7 +169,6 @@ class TailorResumeView(APIView):
             #         }
             #     }
             # response = client.responses.create(prompt=prompt)
-
             return Response(
                 {
                     "user_id": user_id,
@@ -177,7 +176,7 @@ class TailorResumeView(APIView):
                     "job_posting_url": job_posting_url,
                     "resume_text": resume_text,
                     "job_posting_text": job_posting_text,
-                    # "output_text": response.output_text,
+                    "output_text": response.output_text,
                 },
                 status=status.HTTP_200_OK
             )
