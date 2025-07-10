@@ -146,9 +146,15 @@ class TailorResumeView(APIView):
             # Call job posting scraper + parser
             linkedin_job_posting = LinkedInPosting(job_posting_url)
             job_posting_text = linkedin_job_posting.get_text()
-            if not job_posting_text:
-                raise ParsingError("Unable to parse job posting")
+        except ParsingError as error:
+            return Response(
+                {
+                    "error": error
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
+        try:
             # Send request to AI API and receive tailored resume response -- Max
             client = OpenAI(api_key=settings.OPENAI_API_KEY)
             prompt = {
@@ -172,10 +178,12 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_200_OK
             )
-        except ParsingError as error:
+        except Exception as e:
+            #TODO add error handling
             return Response(
                 {
-                    "error": error
+                    "error": e
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
