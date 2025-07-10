@@ -28,6 +28,7 @@ class LinkedInPosting(JobPosting):
         # Will attempt to try without headless browsers since it's possible the problem only
         # emerges when we try expired applications. Will test with this for now
 
+        #TODO move this into format_url method and refactor to raise ParsingError
         if not self.job_id:
             print("unable to parse Job ID")
             return
