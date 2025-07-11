@@ -17,7 +17,6 @@ export default function ResumeUploader() {
     }
   }, [setTempUploadedResumeFile]);
 
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'application/pdf': ['.pdf'],
