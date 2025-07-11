@@ -1,7 +1,7 @@
 import os
 
-from tailor.domain.document.constants import DOCX, PDF, TEX, TXT
-from tailor.domain.document import (
+from .constants import DOCX, PDF, TEX, TXT
+from . import (
     Document,
     DocxDocument,
     PdfDocument,
