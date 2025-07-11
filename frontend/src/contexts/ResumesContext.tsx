@@ -100,7 +100,7 @@ function resumesReducer(state: ResumesState, action: ResumesAction) {
 }
 
 export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [resumesState, resumesDispatch] = useReducer(resumesReducer, resumesInitialState)
+  const [resumesState, resumesDispatch] = useReducer(resumesReducer, resumesInitialState);
 
   const handleSetSelectedResume = (resume: Resume) => {
     resumesDispatch({
