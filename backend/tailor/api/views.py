@@ -149,26 +149,21 @@ class TailorResumeView(APIView):
             print("made it to job parsing")
             linkedin_job_posting = LinkedInPosting(job_posting_url)
             job_posting_text = linkedin_job_posting.get_text()
-        except ParsingError as error:
-            return Response(
-                {
-                    "error": error
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
-        try:
             # Send request to AI API and receive tailored resume response -- Max
-            # client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            # prompt = {
-            #         "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-            #         "version": "5",
-            #         "variables": {
-            #             "job_posting": job_posting_text,
-            #             "resume": resume_text
-            #         }
-            #     }
-            # response = client.responses.create(prompt=prompt)
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            prompt = {
+                    "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
+                    "version": "5",
+                    "variables": {
+                        "job_posting": job_posting_text,
+                        "resume": resume_text
+                    }
+                }
+            response = client.responses.create(prompt=prompt)
+
+            tailored_resume = resume_document.generate_copy()
+
             return Response(
                 {
                     "user_id": user_id,
@@ -180,11 +175,19 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
-            #TODO add error handling
+        except ParsingError as error:
+            # TODO add error handling
             return Response(
                 {
-                    "error": e
+                    "error": error
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as error:
+            # TODO add error handling
+            return Response(
+                {
+                    "error": error
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

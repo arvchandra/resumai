@@ -13,5 +13,5 @@ class Document(ABC):
         pass
 
     @abstractmethod
-    def generate_copy(self):
+    def generate_copy(self, bullets_to_redact):
         pass
