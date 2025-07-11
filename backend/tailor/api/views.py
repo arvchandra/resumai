@@ -17,6 +17,7 @@ from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume
 
+
 class ParsingError(Exception):
     pass
 
@@ -140,21 +141,15 @@ class TailorResumeView(APIView):
             # Get text content of resume
             resume_document = DocumentFactory.create(resume.file)
             resume_text = resume_document.get_text()
+            print("made it to resume parsing")
             if not resume_text:
                 raise ParsingError("Unable to parse resume")
 
             # Call job posting scraper + parser
+            print("made it to job parsing")
             linkedin_job_posting = LinkedInPosting(job_posting_url)
             job_posting_text = linkedin_job_posting.get_text()
-        except ParsingError as error:
-            return Response(
-                {
-                    "error": error
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
-        try:
             # Send request to AI API and receive tailored resume response -- Max
             client = OpenAI(api_key=settings.OPENAI_API_KEY)
             prompt = {
@@ -167,6 +162,8 @@ class TailorResumeView(APIView):
                 }
             response = client.responses.create(prompt=prompt)
 
+            tailored_resume = resume_document.generate_copy()
+
             return Response(
                 {
                     "user_id": user_id,
@@ -178,11 +175,19 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_200_OK
             )
-        except Exception as e:
-            #TODO add error handling
+        except ParsingError as error:
+            # TODO add error handling
             return Response(
                 {
-                    "error": e
+                    "error": error
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as error:
+            # TODO add error handling
+            return Response(
+                {
+                    "error": error
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
