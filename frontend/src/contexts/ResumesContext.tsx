@@ -1,37 +1,59 @@
-import React, { createContext, useCallback, useContext, useReducer } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useReducer } from "react";
+
+import { fetchUserResumes } from "../http";
 
 import type Resume from "../interfaces/Resume";
 
-type ResumesContextType = {
+interface ResumesState {
   resumes: Resume[];
   selectedResume: Resume | null;
   isFetchingResumes: boolean;
-  setResumes: (resumes: Resume[]) => void;
-  setSelectedResume: (resume: Resume) => void;
-  setIsFetchingResumes: (isFetching: boolean) => void;
+  tempUploadedResumeFile: File | null;
+  error: string;
 }
 
-export const ResumesContext = createContext<ResumesContextType>({
+interface ResumesMethods {
+  fetchResumes: () => Promise<void>;
+  addUploadedResume: (resume: Resume) => void;
+  setSelectedResume: (resume: Resume) => void;
+  setTempUploadedResumeFile: (file: File | null) => void;
+}
+
+const resumesInitialState: ResumesState = {
   resumes: [],
   selectedResume: null,
   isFetchingResumes: false,
-  setResumes: () => {},
-  setSelectedResume: () => {},
-  setIsFetchingResumes: () => {},
-})
-
-type ResumesState = {
-  resumes: Resume[];
-  selectedResume: Resume | null;
-  isFetchingResumes: boolean;
+  tempUploadedResumeFile: null,
+  error: '',
 }
 
+type ResumesContextType = ResumesState & ResumesMethods;
+
+export const ResumesContext = createContext<ResumesContextType | undefined>(undefined)
+
 type ResumesAction =
+  | {type: 'FETCH_START' }
+  | {type: 'FETCH_STOP' }
   | {type: 'SET_RESUMES'; payload: Resume[]; }
   | {type: 'SET_SELECTED_RESUME'; payload: Resume; }
-  | {type: 'SET_IS_FETCHING_RESUMES'; payload: boolean; };
+  | {type: 'SET_SELECTED_RESUME_IF_NONE'; payload: Resume; }
+  | {type: 'SET_TEMP_UPLOADED_RESUME_FILE', payload: File | null; }
+  | {type: 'ADD_UPLOADED_RESUME', payload: Resume; }
+  | {type: 'SET_ERROR', payload: string; };
 
 function resumesReducer(state: ResumesState, action: ResumesAction) {
+  if (action.type == "FETCH_START") {
+    return {
+      ...state,
+      isFetchingResumes: true,
+    }
+  }
+  if (action.type == "FETCH_STOP") {
+    return {
+      ...state,
+      isFetchingResumes: false,
+    }
+  }
   if (action.type == "SET_RESUMES") {
     // Reset the selected resume to null since the 
     // set of resumes has been refreshed.
@@ -47,10 +69,30 @@ function resumesReducer(state: ResumesState, action: ResumesAction) {
       selectedResume: action.payload,
     }
   }
-  if (action.type == "SET_IS_FETCHING_RESUMES") {
+  if (action.type == "SET_SELECTED_RESUME_IF_NONE") {
+    if (state.selectedResume) return state;
     return {
       ...state,
-      isFetchingResumes: action.payload,
+      selectedResume: action.payload,
+    }
+  }
+  if (action.type == "SET_TEMP_UPLOADED_RESUME_FILE") {
+    return {
+      ...state,
+      tempUploadedResumeFile: action.payload,
+    }
+  }
+  if (action.type == "ADD_UPLOADED_RESUME") {
+    const newResumes = [...state.resumes];
+    return {
+      ...state,
+      resumes: [...newResumes, action.payload],
+    }
+  }
+  if (action.type == "SET_ERROR") {
+    return {
+      ...state,
+      error: action.payload,
     }
   }
 
@@ -58,18 +100,7 @@ function resumesReducer(state: ResumesState, action: ResumesAction) {
 }
 
 export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [resumesState, resumesDispatch] = useReducer(resumesReducer, {
-    resumes: [],
-    selectedResume: null,
-    isFetchingResumes: false,
-  })
-
-  const handleSetResumes = useCallback((resumes: Resume[]) => {
-    resumesDispatch({
-      type: "SET_RESUMES",
-      payload: resumes,
-    })
-  }, []);
+  const [resumesState, resumesDispatch] = useReducer(resumesReducer, resumesInitialState);
 
   const handleSetSelectedResume = (resume: Resume) => {
     resumesDispatch({
@@ -78,20 +109,63 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
     })
   };
 
-  const handleSetIsFetchingResumes = useCallback((isFetching: boolean) => {
+  const handleSetTempUploadedResumeFile = (file: File | null) => {
     resumesDispatch({
-      type: "SET_IS_FETCHING_RESUMES",
-      payload: isFetching,
+      type: "SET_TEMP_UPLOADED_RESUME_FILE",
+      payload: file,
     })
+  };
+
+  const handleAddUploadedResume = (resume: Resume) => {
+    resumesDispatch({
+      type: "ADD_UPLOADED_RESUME",
+      payload: resume,
+    })
+  };
+
+  // Async resumes fetching function
+  const fetchResumes = useCallback(async () => {
+    resumesDispatch({type: "FETCH_START"});
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const data: Resume[] = await fetchUserResumes();
+      resumesDispatch({type: "SET_RESUMES", payload: data});
+
+      // Set default resume as selected resume only if no
+      // resume had previously been selected (i.e. initial load)
+      const default_resume = data.find(resume => resume.is_default);
+      if (default_resume) {
+        resumesDispatch({
+          type: "SET_SELECTED_RESUME_IF_NONE",
+          payload: default_resume,
+        })
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        resumesDispatch({type: "SET_ERROR", payload: error.message});
+      } else {
+        resumesDispatch({type: "SET_ERROR", payload: "An error occurred."});
+      }
+    }
+    
+    resumesDispatch({type: "FETCH_STOP"});
   }, []);
+
+  // Fetch resumes on initial context load
+  useEffect(() => {
+    fetchResumes();
+  }, [fetchResumes]);
 
   const ctxValue = {
     resumes: resumesState.resumes,
     selectedResume: resumesState.selectedResume,
     isFetchingResumes: resumesState.isFetchingResumes,
-    setResumes: handleSetResumes,
+    tempUploadedResumeFile: resumesState.tempUploadedResumeFile,
+    error: resumesState.error,
+    fetchResumes,
+    addUploadedResume: handleAddUploadedResume,
     setSelectedResume: handleSetSelectedResume,
-    setIsFetchingResumes: handleSetIsFetchingResumes,
+    setTempUploadedResumeFile: handleSetTempUploadedResumeFile,
   }
 
   return (

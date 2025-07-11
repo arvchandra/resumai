@@ -1,45 +1,21 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 
+import { useResumesContext } from "../../contexts/ResumesContext";
 
-enum ResumeType {
-  Default = 0
-}
+import fileUploadIcon from "../../assets/images/file-upload-icon.png";
+import removeFileIcon from "../../assets/images/remove-icon.png";
+import "./ResumeUploader.css";
 
-interface FilePayload {
-  file: File;
-  user_id: 2;
-  type: ResumeType.Default;
-}
-
-type FormDataKeys = keyof FilePayload
-
-
-export default function ResumeUploader() {
-  const handleUpload = async (file: File) => {
-    if (file) {
-      const formData = new FormData;
-      formData.append('file', file);
-
-      try {
-        const result = await fetch('http://127.0.0.1:8000/tailor/users/2/resumes/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        const data = await result.json();
-
-        console.log(data);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  }
+export default function ResumeUploader() {  
+  const { tempUploadedResumeFile, setTempUploadedResumeFile } = useResumesContext();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    handleUpload(acceptedFiles[0]);
-  }, []);
-
+    // Store uploaded resume file in state
+    if (acceptedFiles[0]) {
+      setTempUploadedResumeFile(acceptedFiles[0])
+    }
+  }, [setTempUploadedResumeFile]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -53,16 +29,36 @@ export default function ResumeUploader() {
     }
   });
 
+  const handleRemoveFileClick = () => {
+    setTempUploadedResumeFile(null);
+  }
+
+  // Conditional rendering of resume uploader or temporarily uploaded file
+  let resumeUploaderContent = null;
+
+  if (tempUploadedResumeFile) {
+    resumeUploaderContent = (
+      <div className="temp-uploaded-file-container">
+        <span className="temp-uploaded-file-name">{tempUploadedResumeFile.name}</span>
+        <img className="action-icon" src={removeFileIcon} title="remove" onClick={handleRemoveFileClick} alt="file-remove" />
+      </div>
+    );
+  } else {
+    resumeUploaderContent = (
+      <div {...getRootProps()}>
+        <div className={`drag-drop-container ${isDragActive ? "drag-active": ""}`}>
+          <img className="icon" src={fileUploadIcon} alt="file-upload" />
+          <span className="drag-drop-instructions"><strong>Choose a file</strong> or drag it here</span>
+        </div>
+        <input id="file" name="file" {...getInputProps()} />
+      </div>
+    )
+  }
 
   return (
-    <div {...getRootProps()}>
-      <input {...getInputProps()} />
-      {
-        isDragActive ?
-          <p>Drop here ...</p> :
-          <p>Drag 'n' drop your resume here</p>
-      }
-
-    </div>
+    <>
+      <label htmlFor="file">Upload a resume:</label>
+      {resumeUploaderContent}
+    </>
   )
 }
