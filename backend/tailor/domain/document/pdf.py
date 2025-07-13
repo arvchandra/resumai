@@ -16,6 +16,8 @@ DESTINATION_DIR_PATH = f"/Users/maxingraham-rakatansky/resumai_django/resumai/ba
 HARDCODED_BULLETS = [
             "●\u200b Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React. \n",
             "●\u200b Retained our highest-revenue customer (worth $200,000/year) by resolving critical data integrity issues, which involved writing Django management commands and raw SQL to quickly discover and fix erroneous data mappings. \n",
+            "●\u200b Upgraded our Nextgov and Government Executive websites to a modern responsive web design, which were both subsequently nominated for a web design award on Folio. \n"
+            "●\u200b Interviewed and hired senior Django developers. \n"
             "Deputy engineer for async AWS FIFO queue migration in Ruby to address timestamp-sensitive concurrency problem for Service-Level-Agreement(SLA) feature used by enterprise customers; leading post-release handover."
         ]
 
@@ -88,7 +90,6 @@ class PdfDocument(Document):
             "height": source_pdf[0].rect.height
         }
 
-
         # TODO account for header and footer on each page
         # TODO do this on resume upload
 
@@ -124,7 +125,6 @@ class PdfDocument(Document):
         """
         Splits our unified PDF back into the original PDF length
         """
-
         # unpacks source details dict values and checks if all are defined
         # TODO make sure no values can be 0 or empty
         if not all(list(self.source_pdf_details.values())):

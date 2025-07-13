@@ -151,16 +151,16 @@ class TailorResumeView(APIView):
             job_posting_text = linkedin_job_posting.get_text()
 
             # Send request to AI API and receive tailored resume response -- Max
-            client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            prompt = {
-                    "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-                    "version": "5",
-                    "variables": {
-                        "job_posting": job_posting_text,
-                        "resume": resume_text
-                    }
-                }
-            response = client.responses.create(prompt=prompt)
+            # client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            # prompt = {
+            #         "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
+            #         "version": "5",
+            #         "variables": {
+            #             "job_posting": job_posting_text,
+            #             "resume": resume_text
+            #         }
+            #     }
+            # response = client.responses.create(prompt=prompt)
 
             tailored_resume = resume_document.generate_copy()
 
@@ -171,7 +171,7 @@ class TailorResumeView(APIView):
                     "job_posting_url": job_posting_url,
                     "resume_text": resume_text,
                     "job_posting_text": job_posting_text,
-                    "output_text": response.output_text,
+                    # "output_text": response.output_text,
                 },
                 status=status.HTTP_200_OK
             )
