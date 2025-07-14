@@ -259,13 +259,13 @@ class PdfDocument(Document):
 
         # distance from top of the page to the text block with the lowest y0 value (bottom of header)
         top_of_page = 0
-        bottom of header = min(text_block[1] for text_block in page.get_text("blocks"))
-        header_height = top_of_page + bottom of header
+        bottom_of_header = min(text_block[1] for text_block in page.get_text("blocks"))
+        header_height = top_of_page + bottom_of_header
 
         # distance from the bottom of the page to the text block with the largest y1 value (top of footer)
         bottom_of_page = page.rect.height
-        top of footer = max(text_block[3] for text_block in page.get_text("blocks"))
-        footer_height = bottom_of_page - top of footer
+        top_of_footer = max(text_block[3] for text_block in page.get_text("blocks"))
+        footer_height = bottom_of_page - top_of_footer
 
         return header_height, footer_height
 
