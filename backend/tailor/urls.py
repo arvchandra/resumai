@@ -29,7 +29,7 @@ urlpatterns = [
         name="tailor-resume",
     ),
     path(
-        "users/<int:user_id>/resumes/tailored",
+        "users/<int:user_id>/tailored-resumes",
         TailoredResumeListView.as_view(),
         name="tailored-resumes",
     ),
