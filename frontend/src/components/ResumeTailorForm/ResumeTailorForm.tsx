@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import useFetch from "../../hooks/useFetch";
+import { fetchTailoredResumes } from "../../http";
 import ResumeSelector from "../ResumeSelector/ResumeSelector";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
@@ -11,6 +13,7 @@ import type Resume from "../../interfaces/Resume";
 type ResumeToTailor = Resume | null;
 
 export default function ResumeTailorForm() {
+  const { tailoredResumes, setTailoredResumes} = useFetch(fetchTailoredResumes);
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
 
