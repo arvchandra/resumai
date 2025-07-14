@@ -3,6 +3,7 @@ import shutil
 import pymupdf4llm
 import pymupdf
 import os
+from django.conf import settings
 
 from .base import Document
 
@@ -237,7 +238,6 @@ class PdfDocument(Document):
         updated_rect = self._get_rect(text_block, offset_by)
 
         # check if updated rectangle intersects with a page break
-        print("checking page break rects")
         for page_break_rect in self.page_break_rects:
             if page_break_rect.intersects(updated_rect):
                 # TODO break up only part of text block that overlaps
@@ -245,7 +245,6 @@ class PdfDocument(Document):
                 updated_rect = self._get_rect(text_block, updated_offset)
 
         return updated_rect
-
 
     @staticmethod
     def calculate_page_break_spacing(page: pymupdf.Page):
@@ -268,7 +267,6 @@ class PdfDocument(Document):
         footer_height = bottom_of_page - top_of_footer
 
         return header_height, footer_height
-
 
     @staticmethod
     def _combine_rects(existing_rect: pymupdf.Rect, new_rect: pymupdf.Rect):
