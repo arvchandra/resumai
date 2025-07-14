@@ -187,3 +187,10 @@ class TailorResumeView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+class TailoredResumeListView(APIView):
+    def get(self, request: Request) -> Response:
+        return Response(
+            {"Status": "Great job!"},
+            status.HTTP_200_OK,
+        )
