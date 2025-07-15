@@ -17,26 +17,9 @@ from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume
 
+
 class ParsingError(Exception):
     pass
-
-
-class ParseJobPostingView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request: Request) -> Response:
-        linkedin_job_id = request.query_params.get("linkedInJobID")
-        if not linkedin_job_id:
-            raise ValidationError(
-                {"linkedInJobID": "This query parameter is required."}
-            )
-
-        job_description_text = f'The LinkedIn job ID for this request is: {linkedin_job_id}'
-
-        return Response(
-            {"jobDescriptionText": job_description_text},
-            status.HTTP_200_OK,
-        )
 
 
 class UserResumeListView(ListAPIView):
@@ -189,4 +172,3 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
