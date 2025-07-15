@@ -7,18 +7,11 @@
   flex-direction: column;
   gap: 2rem;
   padding: 2rem;
-  width: 580px;
+  min-width: 450px;
 }
 
 .app-log {
   height: 100px;
   resize: none;
   width: 100%;
-}
-
-/* Responsive layout for smaller screens */
-@media (max-width: 768px) {
-  .resume-tailor-form {
-    width: 100%;
-  }
 }

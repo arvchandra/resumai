@@ -1,35 +1,18 @@
-import { useEffect } from "react";
+import { BrowserRouter } from 'react-router-dom';
 
-// import JobPosting from "./components/JobPosting/JobPosting";
-import ResumeTailorForm from "./components/ResumeTailorForm/ResumeTailorForm";
-
-import useFetch from "./hooks/useFetch";
-import { useResumesContext } from "./contexts/ResumesContext";
-import { fetchUserResumes } from "./http";
+import AppRoutes from './routes/AppRoutes';
+import { ResumesContextProvider } from "./contexts/ResumesContext";
 
 import "./App.css";
 import "./assets/styles/shared.css";
 
 function App() {
-  const { setResumes, setIsFetchingResumes } = useResumesContext();
-  const { isFetching, fetchedData } = useFetch(fetchUserResumes); //TODO: Error handling
-
-  // Update the fetching status in the resumes context
-  useEffect(() => {
-    setIsFetchingResumes(isFetching);
-  }, [isFetching, setIsFetchingResumes]);
-
-  // Update the resumes array in the resumes context
-  useEffect(() => {
-    if (fetchedData) {
-      setResumes(fetchedData);
-    }
-  }, [fetchedData, setResumes]);
-
   return (
-    <div className="App">
-        <ResumeTailorForm />
-    </div>
+    <BrowserRouter>
+      <ResumesContextProvider>
+        <AppRoutes />
+      </ResumesContextProvider>
+    </BrowserRouter>
   );
 }
 

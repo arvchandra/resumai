@@ -1,0 +1,43 @@
+.drag-drop-container {
+  align-items: center;
+  background-color: #f3f3f3;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 55px;
+  justify-content: center;
+  outline: 1px dashed #b4b4b4;
+  outline-offset: -5px;
+  padding: 1rem;
+  width: 420px;
+}
+
+.drag-drop-container.drag-active {
+  background-color: #fff;
+  outline-offset: -8px;
+}
+
+.drag-drop-instructions {
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+.drag-drop-container:not(.drag-active):hover .drag-drop-instructions strong {
+  color: #007bff;
+}
+
+.temp-uploaded-file-container {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  height: 55px;
+  justify-content: center;
+  padding: 1rem;
+  width: 420px;
+}
+
+.temp-uploaded-file-name {
+  font-size: 1rem;
+  font-weight: 500;
+}

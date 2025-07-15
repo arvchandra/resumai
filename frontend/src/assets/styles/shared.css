@@ -10,8 +10,14 @@
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-button:focus {
+.btn:focus {
   outline: none;
+}
+
+/* Small button */
+.btn-small {
+  font-size: 0.75rem;
+  padding: 0.4rem 1.8rem;
 }
 
 /* Primary button */
@@ -24,6 +30,34 @@ button:focus {
   background-color: #0056b3;
 }
 
+/* Cancel button */
+.btn-cancel {
+  background-color: inherit;
+  border: 1px solid #a7a7a7;
+  color: #a7a7a7;
+}
+
+.btn-cancel:hover {
+  border: 1px solid #818181;
+  color: #818181;
+}
+
+/* Disabled button */
+.btn:disabled {
+  background-color: inherit;
+  border: 1px solid #a7a7a7;
+  color: #a7a7a7;
+  cursor: not-allowed;
+}
+
+.btn-action-row {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+}
+
 /* Form styles */
 .form-field {
   display: flex;
@@ -31,8 +65,10 @@ button:focus {
   text-align: left;
 }
 
-.form-field label {
+.form-field label,
+.modal-content label {
   color: black;
+  display: inline-block;
   font-weight: bold;
   margin-bottom: 0.5rem;
 }
@@ -47,15 +83,15 @@ button:focus {
 }
 
 .form-field input:focus {
-  outline: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  outline: none;
 }
 
 .form-field select {
   -webkit-appearance: none;
   appearance: none;
   background-color: #fff;
-  background-image: url("../select-chevron.svg");
+  background-image: url("../images/select-chevron.svg");
   background-position: right 0.625rem center;
   background-repeat: no-repeat;
   background-size: 1rem;
@@ -66,6 +102,20 @@ button:focus {
 }
 
 .form-field select:focus {
-  outline: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.icon {
+  cursor: pointer;
+  display: block;
+  height: 2rem;
+  width: 2rem;
+}
+
+.action-icon {
+  cursor: pointer;
+  display: block;
+  height: 1rem;
+  width: 1rem;
 }

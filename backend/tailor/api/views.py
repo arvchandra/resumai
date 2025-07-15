@@ -1,11 +1,9 @@
 import os
-from openai import OpenAI
 
+from openai import OpenAI
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,24 +18,6 @@ from tailor.models import Resume
 
 class ParsingError(Exception):
     pass
-
-
-class ParseJobPostingView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request: Request) -> Response:
-        linkedin_job_id = request.query_params.get("linkedInJobID")
-        if not linkedin_job_id:
-            raise ValidationError(
-                {"linkedInJobID": "This query parameter is required."}
-            )
-
-        job_description_text = f'The LinkedIn job ID for this request is: {linkedin_job_id}'
-
-        return Response(
-            {"jobDescriptionText": job_description_text},
-            status.HTTP_200_OK,
-        )
 
 
 class UserResumeListView(ListAPIView):
@@ -85,8 +65,11 @@ class UserResumeUploadView(APIView):
             new_resume_upload.user = User.objects.get(id=user_id)  # TODO: Get user from auth
             new_resume_upload.save()
 
+            resume_serializer = ResumeSerializer(new_resume_upload)
+            resume_json_data = {"uploadedResume": resume_serializer.data}
+
             return Response(
-                {"user_id": user_id},
+                resume_json_data,
                 status=status.HTTP_200_OK
             )
 
@@ -169,7 +152,7 @@ class TailorResumeView(APIView):
                     "job_posting_url": job_posting_url,
                     "resume_text": resume_text,
                     "job_posting_text": job_posting_text,
-                    # "output_text": response.output_text,
+                    "output_text": response.output_text,
                 },
                 status=status.HTTP_200_OK
             )
@@ -189,3 +172,13 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class TailoredResumeListView(APIView):
+    def get(self, request, **kwargs):
+        user_id = self.kwargs["user_id"]
+        return Response(
+            {"Status": "Great job!",
+             "user": user_id},
+            status.HTTP_200_OK,
+        )
