@@ -13,7 +13,7 @@ import type Resume from "../../interfaces/Resume";
 type ResumeToTailor = Resume | null;
 
 export default function ResumeTailorForm() {
-  const { tailoredResumes, setTailoredResumes} = useFetch(fetchTailoredResumes);
+  const { fetchedData: tailoredResumes, isFetching, error } = useFetch(fetchTailoredResumes);
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
 
