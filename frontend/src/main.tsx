@@ -1,15 +1,12 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
 
-import App from './App.tsx'
-import { ResumesContextProvider } from "./contexts/ResumesContext";
+import App from './App.tsx';
 
-import './index.css'
+import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ResumesContextProvider>
-      <App />
-    </ResumesContextProvider>
+    <App />
   </StrictMode>,
 )
