@@ -154,7 +154,6 @@ class PdfDocument(Document):
             resume_page.show_pdf_page(
                 resume_page.rect,
                 unified_pdf,
-                0,
                 clip=unified_page_rect
             )
 
@@ -228,7 +227,6 @@ class PdfDocument(Document):
             tailored_page_unified.show_pdf_page(
                 updated_rect,
                 redacted_pdf,
-                redacted_page.number,
                 clip=source_rect
             )
 
