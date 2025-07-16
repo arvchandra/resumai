@@ -4,8 +4,6 @@ from openai import OpenAI
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,26 +15,9 @@ from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume
 
+
 class ParsingError(Exception):
     pass
-
-
-class ParseJobPostingView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request: Request) -> Response:
-        linkedin_job_id = request.query_params.get("linkedInJobID")
-        if not linkedin_job_id:
-            raise ValidationError(
-                {"linkedInJobID": "This query parameter is required."}
-            )
-
-        job_description_text = f'The LinkedIn job ID for this request is: {linkedin_job_id}'
-
-        return Response(
-            {"jobDescriptionText": job_description_text},
-            status.HTTP_200_OK,
-        )
 
 
 class UserResumeListView(ListAPIView):
@@ -190,3 +171,12 @@ class TailorResumeView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+class TailoredResumeListView(APIView):
+    def get(self, request, **kwargs):
+        user_id = self.kwargs["user_id"]
+        return Response(
+            {"Status": "Great job!",
+             "user": user_id},
+            status.HTTP_200_OK,
+        )
