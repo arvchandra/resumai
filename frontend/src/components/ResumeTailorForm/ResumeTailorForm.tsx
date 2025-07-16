@@ -1,3 +1,5 @@
+import { AgGridReact } from 'ag-grid-react';
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { useState } from "react";
 
 import useFetch from "../../hooks/useFetch";
@@ -9,6 +11,9 @@ import { useResumesContext } from "../../contexts/ResumesContext";
 
 import "./ResumeTailorForm.css";
 import type Resume from "../../interfaces/Resume";
+import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 type ResumeToTailor = Resume | null;
 
@@ -21,6 +26,55 @@ export default function ResumeTailorForm() {
   const [isTailoringResume, setIsTailoringResume] = useState(false);
 
   const disableTailorButton = isUploadingResume || isTailoringResume;
+
+
+// Solution 2: ag-grid
+  const [rowData, setRowData] = useState([
+    { resume: "Google_may_24_2025", company: "Google", role: "Backend Engineer", URL: "www.linkedin.com/jobs/view/12345" },
+    { resume: "Meta_april_4_2025", company: "Meta", role: "Product Engineer", URL: "www.linkedin.com/jobs/view/23456" },
+    { resume: "Microsoft_june_17_2025", company: "Microsoft", role: "Full-Stack Engineer", URL: "www.linkedin.com/jobs/view/98765" },
+  ]);
+
+  const [colDefs, setColDefs] = useState([
+    { field: "resume",
+      cellStyle: {
+            textAlign: 'left'
+        } },
+    { field: "company" },
+    { field: "role" },
+    { field: "URL" }
+  ]);
+//     const [rowData, setRowData] = useState([
+//         { make: "Tesla", model: "Model Y", price: 64950, electric: true },
+//         { make: "Ford", model: "F-Series", price: 33850, electric: false },
+//         { make: "Toyota", model: "Corolla", price: 29600, electric: false },
+//     ]);
+//
+//     // Column Definitions: Defines the columns to be displayed.
+//     const [colDefs, setColDefs] = useState([
+//         { field: "make" },
+//         { field: "model" },
+//         { field: "price" },
+//         { field: "electric" }
+//     ]);
+
+
+// Solution 1: homecode
+  const theadData = ["Resume Name", "Company", "Role", "URL"];
+  const tbodyData = [
+    {
+    id: "1",
+    items: ["Google_may_24_2025", "Google", "Backend Engineer", "www.linkedin.com/jobs/view/12345"]
+    },
+    {
+    id: "2",
+    items: ["Meta_april_4_2025", "Meta", "Product Engineer", "www.linkedin.com/jobs/view/23456"]
+    },
+    {
+    id: "3",
+    items: ["Microsoft_june_17_2025", "Microsoft", "Full-Stack Engineer", "www.linkedin.com/jobs/view/98765"]
+    },
+    ];
 
   const handleTailorResumeClick = async () => {
     setIsTailoringResume(true);
@@ -98,6 +152,15 @@ export default function ResumeTailorForm() {
             {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
           </button>
         </div>
+        <div className='ag-theme-quartz' style={{ height: 200, width: 750 }}>
+            <AgGridReact
+                rowData={rowData}
+                columnDefs={colDefs}
+            />
+        </div>
+        <div>
+          <TailoredResumeTable theadData={theadData} tbodyData={tbodyData} />
+        </div>
       </div>
-  )
+  );
 }
