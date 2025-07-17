@@ -10,10 +10,10 @@ from rest_framework.views import APIView
 from django.contrib.auth.models import User
 from django.conf import settings
 
-from tailor.api.serializers import FileUploadSerializer, ResumeSerializer
+from tailor.api.serializers import FileUploadSerializer, ResumeSerializer, TailoredResumeSerializer
 from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
-from tailor.models import Resume
+from tailor.models import Resume, TailoredResume
 
 
 class ParsingError(Exception):
@@ -74,6 +74,14 @@ class UserResumeUploadView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TailoredResumeListView(ListAPIView):
+    serializer_class = TailoredResumeSerializer
+
+    def get_queryset(self):
+        user_id = self.kwargs["user_id"]
+        return TailoredResume.objects.filter(user__id=user_id)
 
 
 class TailorResumeView(APIView):
@@ -172,11 +180,11 @@ class TailorResumeView(APIView):
             )
 
 
-class TailoredResumeListView(APIView):
-    def get(self, request, **kwargs):
-        user_id = self.kwargs["user_id"]
-        return Response(
-            {"Status": "Great job!",
-             "user": user_id},
-            status.HTTP_200_OK,
-        )
+# class TailoredResumeListView(APIView):
+#     def get(self, request, **kwargs):
+#         user_id = self.kwargs["user_id"]
+#         return Response(
+#             {"Status": "Great job!",
+#              "user": user_id},
+#             status.HTTP_200_OK,
+#         )
