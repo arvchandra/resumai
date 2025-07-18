@@ -12,8 +12,9 @@ export default function LoginButton() {
       const googleAccessToken = tokenResponse.access_token;
 
       try {
-        const response = await fetch('http://127.0.0.1:8000/auth/google-login/', {
+        const response = await fetch('http://localhost:8000/auth/google-login/', {
           method: 'POST',
+          credentials: "include",
           headers: {
             'Content-Type': 'application/json',
           },

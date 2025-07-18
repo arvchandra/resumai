@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import requests
 
 from rest_framework import status
@@ -47,6 +48,7 @@ class GoogleLoginView(APIView):
             # Generate a refresh token (JSON Web Token)
             # and access token.
             refresh = RefreshToken.for_user(user)
+            refresh_token = str(refresh)
             access_token = str(refresh.access_token)
 
             # Generate a response containing the access token and user details
@@ -62,11 +64,12 @@ class GoogleLoginView(APIView):
             # new access tokens without re-authenticating the user.
             response.set_cookie(
                 key="refresh_token",
-                value=str(refresh),
+                value=refresh_token,
                 httponly=True,
                 secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
                 samesite="Lax",  # or "Strict"
-                path="auth/token/refresh/",  # Refresh token endpoint
+                expires=datetime.now() + timedelta(days=7),
+                path="/",  # Refresh token endpoint
             )
             return response
 
