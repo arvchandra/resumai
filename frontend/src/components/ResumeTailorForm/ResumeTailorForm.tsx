@@ -1,8 +1,7 @@
 import { useState } from "react";
 
-import useFetch from "../../hooks/useFetch";
-import { fetchTailoredResumes } from "../../http";
 import ResumeSelector from "../ResumeSelector/ResumeSelector";
+import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
 
@@ -13,7 +12,6 @@ import type Resume from "../../interfaces/Resume";
 type ResumeToTailor = Resume | null;
 
 export default function ResumeTailorForm() {
-  const { fetchedData: tailoredResumes, isFetching, error } = useFetch(fetchTailoredResumes);
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
 
@@ -97,6 +95,9 @@ export default function ResumeTailorForm() {
           <button className="btn btn-primary" onClick={handleTailorResumeClick} disabled={disableTailorButton}>
             {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
           </button>
+        </div>
+        <div>
+          <TailoredResumeTable />
         </div>
       </div>
   )
