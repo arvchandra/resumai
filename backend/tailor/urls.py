@@ -3,6 +3,7 @@ from tailor.api.views import (
     UserResumeUploadView, 
     TailorResumeView,
     TailoredResumeListView,
+    TailoredResumeDownloadView,
     UserResumeListView
 )
 
@@ -26,5 +27,10 @@ urlpatterns = [
         "users/<int:user_id>/tailored-resumes",
         TailoredResumeListView.as_view(),
         name="tailored-resumes",
+    ),
+    path(
+        "users/<int:user_id>/tailor-resume/<int:tailored_resume_id>/download",
+        TailoredResumeDownloadView.as_view(),
+        name="tailor-resume-download",
     ),
 ]
