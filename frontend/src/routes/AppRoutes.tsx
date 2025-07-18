@@ -7,7 +7,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginButton />} />
-      <Route path="/" element={<ResumeTailorForm />} />
+      <Route path="/tailor-resume" element={<ResumeTailorForm />} />
     </Routes>
   );
 }
