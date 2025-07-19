@@ -2,8 +2,11 @@ import { useState } from "react";
 
 import { useResumesContext } from "../contexts/ResumesContext";
 
+import useFetchWithAuth from "./useFetchWithAuth";
+
 export default function useUploadResumeFile() {
   const { tempUploadedResumeFile } = useResumesContext();
+  const fetchWithAuth = useFetchWithAuth();
 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
@@ -13,18 +16,18 @@ export default function useUploadResumeFile() {
 
     setIsUploading(true);
     await new Promise((resolve) => setTimeout(resolve, 1000));
- 
+
     const formData = new FormData;
     formData.append('file', tempUploadedResumeFile);
 
     try {
-      const result = await fetch('http://127.0.0.1:8000/tailor/users/2/resumes/upload', {
+      const result = await fetchWithAuth("http://localhost:8000/tailor/users/2/resumes/upload/", {
         method: 'POST',
         body: formData
       });
 
       setIsUploading(false);
-      
+
       const data = await result.json();
       return data["uploadedResume"];
     } catch (error) {

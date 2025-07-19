@@ -1,11 +1,9 @@
 import { useState } from "react";
 
-import useFetch from "../../hooks/useFetch";
-import { fetchTailoredResumes } from "../../http";
+import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 import ResumeSelector from "../ResumeSelector/ResumeSelector";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
-
 
 import "./ResumeTailorForm.css";
 import type Resume from "../../interfaces/Resume";
@@ -13,9 +11,9 @@ import type Resume from "../../interfaces/Resume";
 type ResumeToTailor = Resume | null;
 
 export default function ResumeTailorForm() {
-  const { fetchedData: tailoredResumes, isFetching, error } = useFetch(fetchTailoredResumes);
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
+  const fetchWithAuth = useFetchWithAuth();
 
   const [jobPostingUrl, setJobPostingUrl] = useState('');
   const [isTailoringResume, setIsTailoringResume] = useState(false);
@@ -49,7 +47,7 @@ export default function ResumeTailorForm() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await fetch('http://127.0.0.1:8000/tailor/users/2/tailor-resume', {
+      const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/tailor-resume/", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
