@@ -9,6 +9,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth.models import User
+from django.urls import reverse
 
 GOOGLE_USER_INFO_API_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
@@ -17,7 +18,7 @@ class GoogleLoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        google_access_token = request.data.get("google_access_token")
+        google_access_token = request.data.get("googleAccessToken")
         if not google_access_token:
             return Response({"error": "Access token required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -62,13 +63,13 @@ class GoogleLoginView(APIView):
             # The refresh token, set in an HTTPOnly cookie, can be used to obtain 
             # new access tokens without re-authenticating the user.
             response.set_cookie(
-                key="refresh_token",
+                key="refreshToken",
                 value=refresh_token,
                 httponly=True,
                 secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
                 samesite="Lax",  # or "Strict"
                 expires=datetime.now() + timedelta(days=7),
-                path="/",  # Refresh token endpoint
+                path=reverse('refresh-token'),  # Refresh token endpoint
             )
             return response
 
@@ -80,7 +81,7 @@ class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")
+        refresh_token = request.COOKIES.get("refreshToken")
         if refresh_token is None:
             return Response({"error": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
 
