@@ -18,7 +18,7 @@ export default function GoogleLoginButton() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ google_access_token: googleAccessToken }),
+          body: JSON.stringify({ googleAccessToken: googleAccessToken }),
         });
 
         if (!response.ok) {
