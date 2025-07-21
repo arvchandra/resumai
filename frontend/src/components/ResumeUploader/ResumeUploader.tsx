@@ -7,7 +7,7 @@ import fileUploadIcon from "../../assets/images/file-upload-icon.png";
 import removeFileIcon from "../../assets/images/remove-icon.png";
 import "./ResumeUploader.css";
 
-export default function ResumeUploader() {  
+export default function ResumeUploader() {
   const { tempUploadedResumeFile, setTempUploadedResumeFile } = useResumesContext();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -19,9 +19,9 @@ export default function ResumeUploader() {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      "application/pdf": [".pdf"],
+      "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
     },
     onDrop,
     onDropRejected: (rejectedFiles) => {
@@ -46,7 +46,7 @@ export default function ResumeUploader() {
   } else {
     resumeUploaderContent = (
       <div {...getRootProps()}>
-        <div className={`drag-drop-container ${isDragActive ? "drag-active": ""}`}>
+        <div className={`drag-drop-container ${isDragActive ? "drag-active" : ""}`}>
           <img className="icon" src={fileUploadIcon} alt="file-upload" />
           <span className="drag-drop-instructions"><strong>Choose a file</strong> or drag it here</span>
         </div>

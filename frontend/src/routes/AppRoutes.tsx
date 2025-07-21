@@ -1,9 +1,9 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
-import ProtectedRoute from './ProtectedRoute';
+import ProtectedRoute from "./ProtectedRoute";
 
-import ResumeTailorForm from '../components/ResumeTailorForm/ResumeTailorForm';
-import LoginButton from '../components/GoogleLoginButton/GoogleLoginButton';
+import ResumeTailorForm from "../components/ResumeTailorForm/ResumeTailorForm";
+import LoginButton from "../components/GoogleLoginButton/GoogleLoginButton";
 
 export default function AppRoutes() {
   return (
