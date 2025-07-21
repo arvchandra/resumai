@@ -12,7 +12,6 @@ export default function AppRoutes() {
 
       {/* All routes below require user to be authenticated */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<ResumeTailorForm />} />
         <Route path="/tailor-resume" element={<ResumeTailorForm />} />
       </Route>
     </Routes>
