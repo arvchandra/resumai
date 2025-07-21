@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import useFetchWithAuth from "../../hooks/useFetchWithAuth";
-// import { fetchTailoredResumes } from "../../http";
 
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import type { CustomCellRendererProps } from 'ag-grid-react';
