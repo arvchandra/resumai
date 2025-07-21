@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useReducer } from "react";
+import React, { createContext, useCallback, useContext, useReducer } from "react";
 
 import { fetchUserResumes } from "../http";
 
@@ -24,7 +24,7 @@ const resumesInitialState: ResumesState = {
   selectedResume: null,
   isFetchingResumes: false,
   tempUploadedResumeFile: null,
-  error: '',
+  error: "",
 }
 
 type ResumesContextType = ResumesState & ResumesMethods;
@@ -32,14 +32,14 @@ type ResumesContextType = ResumesState & ResumesMethods;
 export const ResumesContext = createContext<ResumesContextType | undefined>(undefined)
 
 type ResumesAction =
-  | {type: 'FETCH_START' }
-  | {type: 'FETCH_STOP' }
-  | {type: 'SET_RESUMES'; payload: Resume[]; }
-  | {type: 'SET_SELECTED_RESUME'; payload: Resume; }
-  | {type: 'SET_SELECTED_RESUME_IF_NONE'; payload: Resume; }
-  | {type: 'SET_TEMP_UPLOADED_RESUME_FILE', payload: File | null; }
-  | {type: 'ADD_UPLOADED_RESUME', payload: Resume; }
-  | {type: 'SET_ERROR', payload: string; };
+  | { type: "FETCH_START" }
+  | { type: "FETCH_STOP" }
+  | { type: "SET_RESUMES"; payload: Resume[]; }
+  | { type: "SET_SELECTED_RESUME"; payload: Resume; }
+  | { type: "SET_SELECTED_RESUME_IF_NONE"; payload: Resume; }
+  | { type: "SET_TEMP_UPLOADED_RESUME_FILE", payload: File | null; }
+  | { type: "ADD_UPLOADED_RESUME", payload: Resume; }
+  | { type: "SET_ERROR", payload: string; };
 
 function resumesReducer(state: ResumesState, action: ResumesAction) {
   if (action.type == "FETCH_START") {
@@ -125,11 +125,11 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
 
   // Async resumes fetching function
   const fetchResumes = useCallback(async () => {
-    resumesDispatch({type: "FETCH_START"});
+    resumesDispatch({ type: "FETCH_START" });
     await new Promise((resolve) => setTimeout(resolve, 1000));
     try {
       const data: Resume[] = await fetchUserResumes();
-      resumesDispatch({type: "SET_RESUMES", payload: data});
+      resumesDispatch({ type: "SET_RESUMES", payload: data });
 
       // Set default resume as selected resume only if no
       // resume had previously been selected (i.e. initial load)
@@ -142,19 +142,14 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
       }
     } catch (error) {
       if (error instanceof Error) {
-        resumesDispatch({type: "SET_ERROR", payload: error.message});
+        resumesDispatch({ type: "SET_ERROR", payload: error.message });
       } else {
-        resumesDispatch({type: "SET_ERROR", payload: "An error occurred."});
+        resumesDispatch({ type: "SET_ERROR", payload: "An error occurred." });
       }
     }
-    
-    resumesDispatch({type: "FETCH_STOP"});
-  }, []);
 
-  // Fetch resumes on initial context load
-  useEffect(() => {
-    fetchResumes();
-  }, [fetchResumes]);
+    resumesDispatch({ type: "FETCH_STOP" });
+  }, []);
 
   const ctxValue = {
     resumes: resumesState.resumes,
@@ -177,6 +172,6 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
 
 export const useResumesContext = (): ResumesContextType => {
   const context = useContext(ResumesContext);
-  if (!context) throw new Error('useResumesContext must be used within ResumesContextProvider');
+  if (!context) throw new Error("useResumesContext must be used within ResumesContextProvider");
   return context;
 };
