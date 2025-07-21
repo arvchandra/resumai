@@ -15,7 +15,7 @@ export default function ResumeTailorForm() {
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
   const fetchWithAuth = useFetchWithAuth();
 
-  const [jobPostingUrl, setJobPostingUrl] = useState('');
+  const [jobPostingUrl, setJobPostingUrl] = useState("");
   const [isTailoringResume, setIsTailoringResume] = useState(false);
 
   const disableTailorButton = isUploadingResume || isTailoringResume;
@@ -48,9 +48,9 @@ export default function ResumeTailorForm() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/tailor-resume/", {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           resume_id: resumeToTailor?.id,
@@ -60,7 +60,7 @@ export default function ResumeTailorForm() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.detail || 'Failed to tailor resume');
+        throw new Error(errData.detail || "Failed to tailor resume");
       }
 
       const data = await response.json();
@@ -78,24 +78,24 @@ export default function ResumeTailorForm() {
   };
 
   return (
-      <div className="resume-tailor-form">
-        <ResumeSelector />
-        <div className="form-field">
-          <label htmlFor="job-posting-url">LinkedIn Job Posting URL</label>
-          <input 
-            type="text" 
-            id="job-posting-url" 
-            name="job-posting-url"
-            placeholder="Enter URL" 
-            value={jobPostingUrl} 
-            onChange={(e) => setJobPostingUrl(e.target.value)}
-          />
-        </div>
-        <div>
-          <button className="btn btn-primary" onClick={handleTailorResumeClick} disabled={disableTailorButton}>
-            {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
-          </button>
-        </div>
+    <div className="resume-tailor-form">
+      <ResumeSelector />
+      <div className="form-field">
+        <label htmlFor="job-posting-url">LinkedIn Job Posting URL</label>
+        <input
+          type="text"
+          id="job-posting-url"
+          name="job-posting-url"
+          placeholder="Enter URL"
+          value={jobPostingUrl}
+          onChange={(e) => setJobPostingUrl(e.target.value)}
+        />
       </div>
+      <div>
+        <button className="btn btn-primary" onClick={handleTailorResumeClick} disabled={disableTailorButton}>
+          {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
+        </button>
+      </div>
+    </div>
   )
 }

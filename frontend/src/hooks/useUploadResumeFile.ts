@@ -9,7 +9,7 @@ export default function useUploadResumeFile() {
   const fetchWithAuth = useFetchWithAuth();
 
   const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   async function uploadTemporaryFile() {
     if (!tempUploadedResumeFile) return;
@@ -18,11 +18,11 @@ export default function useUploadResumeFile() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const formData = new FormData;
-    formData.append('file', tempUploadedResumeFile);
+    formData.append("file", tempUploadedResumeFile);
 
     try {
       const result = await fetchWithAuth("http://localhost:8000/tailor/users/2/resumes/upload/", {
-        method: 'POST',
+        method: "POST",
         body: formData
       });
 
@@ -34,7 +34,7 @@ export default function useUploadResumeFile() {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('An error occurred.');
+        setError("An error occurred.");
       }
     }
   }
