@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 
@@ -5,7 +6,14 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export default function GoogleLoginButton() {
   const navigate = useNavigate();
-  const { setAccessToken } = useAuth();
+  const { setAccessToken, isAuthenticated } = useAuth();
+
+  // If already logged-in, redirect to tailor resume page
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/tailor-resume");
+    }
+  }, [isAuthenticated, navigate]);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -18,7 +26,7 @@ export default function GoogleLoginButton() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ google_access_token: googleAccessToken }),
+          body: JSON.stringify({ googleAccessToken: googleAccessToken }),
         });
 
         if (!response.ok) {
@@ -30,12 +38,11 @@ export default function GoogleLoginButton() {
         setAccessToken(data.accessToken);
         navigate("/tailor-resume");
       } catch (error) {
-        setAccessToken(null);
         console.error('Login error:', error);
       }
     },
     onError: () => console.error('Google Login Failed'),
   });
 
-  return <button className='btn btn-primary' onClick={() => login()}>Login with Google</button>;
+  return <button className='btn btn-primary' onClick={() => login()}>Login with Google</button>
 }
