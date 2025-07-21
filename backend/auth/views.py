@@ -88,24 +88,38 @@ class RefreshTokenView(APIView):
             return Response({"error": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            refresh = RefreshToken(refresh_token)
-            access_token = str(refresh.access_token)
-
-            access_token_obj = AccessToken(access_token)
-            user_id = access_token_obj["user_id"]
+            refresh_token_object = RefreshToken(refresh_token)
+            user_id = refresh_token_object["user_id"]
             user = User.objects.get(id=user_id)
 
-            return Response(
-                {
-                    "accessToken": access_token,
-                    "userInfo": {
-                        "email": user.email,
-                        "firstName": user.first_name,
-                        "lastName": user.last_name,
-                    }
-                }, 
-                status=status.HTTP_200_OK
+            # Rotate/generate refresh token (JSON Web Token)
+            # and access token.
+            new_refresh = RefreshToken.for_user(user)
+            new_refresh_token = str(new_refresh)
+            new_access_token = str(new_refresh.access_token)
+
+            # Generate a response containing the new access token and user details
+            response = Response({
+                "accessToken": new_access_token,
+                "userInfo": {
+                    "email": user.email,
+                    "firstName": user.first_name,
+                    "lastName": user.last_name,
+                }
+            })
+
+            # The refresh token, set in an HTTPOnly cookie, can be used to obtain 
+            # new access tokens without re-authenticating the user.
+            response.set_cookie(
+                key="refreshToken",
+                value=new_refresh_token,
+                httponly=True,
+                secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
+                samesite="Lax",  # or "Strict"
+                expires=datetime.now() + timedelta(days=7),
+                path="/",  # Cookie can be access by any endpoint
             )
+            return response
 
         except TokenError:
             return Response({"error": "Invalid or expired token"}, status=status.HTTP_401_UNAUTHORIZED)
