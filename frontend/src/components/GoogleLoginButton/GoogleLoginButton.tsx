@@ -15,13 +15,6 @@ export default function GoogleLoginButton() {
     }
   }, [isAuthenticated]);
 
-  // If already logged-in, redirect to tailor resume page
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     navigate("/tailor-resume");
-  //   }
-  // }, [isAuthenticated, navigate]);
-
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       const googleAccessToken = tokenResponse.access_token;
