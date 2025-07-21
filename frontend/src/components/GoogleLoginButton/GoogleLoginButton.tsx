@@ -1,7 +1,7 @@
-import { useGoogleLogin } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from "@react-oauth/google";
+import { useNavigate } from "react-router-dom";
 
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function GoogleLoginButton() {
   const navigate = useNavigate();
@@ -12,18 +12,18 @@ export default function GoogleLoginButton() {
       const googleAccessToken = tokenResponse.access_token;
 
       try {
-        const response = await fetch('http://localhost:8000/auth/google-login/', {
-          method: 'POST',
+        const response = await fetch("http://localhost:8000/auth/google-login/", {
+          method: "POST",
           credentials: "include",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ googleAccessToken: googleAccessToken }),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Login failed');
+          throw new Error(errorData.error || "Login failed");
         }
 
         const data = await response.json();
@@ -31,11 +31,11 @@ export default function GoogleLoginButton() {
         navigate("/tailor-resume");
       } catch (error) {
         setAccessToken(null);
-        console.error('Login error:', error);
+        console.error("Login error:", error);
       }
     },
-    onError: () => console.error('Google Login Failed'),
+    onError: () => console.error("Google Login Failed"),
   });
 
-  return <button className='btn btn-primary' onClick={() => login()}>Login with Google</button>;
+  return <button className="btn btn-primary" onClick={() => login()}>Login with Google</button>;
 }

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 import Modal from "../Modal/Modal";
 import ResumeUploader from "../ResumeUploader/ResumeUploader";
@@ -10,11 +10,12 @@ import "./ResumeSelector.css";
 export default function ResumeSelector() {
   const dialog = useRef<HTMLDialogElement>(null);
 
-  const { 
+  const {
     resumes,
     isFetchingResumes,
     selectedResume,
     tempUploadedResumeFile,
+    fetchResumes,
     setSelectedResume,
     setTempUploadedResumeFile,
     addUploadedResume,
@@ -22,17 +23,22 @@ export default function ResumeSelector() {
 
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
 
+  // Fetch resumes on initial context load
+  useEffect(() => {
+    fetchResumes();
+  }, [fetchResumes]);
+
   // Set selected resume via dropdown selection
   const handleResumeSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
-      if (event.target.value === "upload") {
-        return handleUploadClick();
-      }
+    if (event.target.value === "upload") {
+      return handleUploadClick();
+    }
 
-      const selectedResumeID = Number.parseInt(event.target.value);
-      const selectedResume = resumes.find(resume => resume.id == selectedResumeID);
-      if (selectedResume) {
-        setSelectedResume(selectedResume);
-      }
+    const selectedResumeID = Number.parseInt(event.target.value);
+    const selectedResume = resumes.find(resume => resume.id == selectedResumeID);
+    if (selectedResume) {
+      setSelectedResume(selectedResume);
+    }
   }
 
   /* Upload Modal methods ------------------------------------------- */
@@ -74,7 +80,7 @@ export default function ResumeSelector() {
 
   if (isFetchingResumes) {
     // Show resumes loading status while resumes are still being fetched
-    resumeSelectorContent = ( 
+    resumeSelectorContent = (
       <>
         <label htmlFor="resume">Select a resume:</label>
         <select id="resume" name="resume" disabled>
@@ -108,12 +114,12 @@ export default function ResumeSelector() {
   // Construct resume uploader modal, which will initially be hidden
 
   const resumeUploaderModal = (
-    <Modal 
-      dialogRef={dialog} 
-      confirmText={tempUploadedResumeFile ? (isUploadingResume ? "Uploading..." : "Upload") : ""} 
-      onConfirm={handleUploadConfirm} 
+    <Modal
+      dialogRef={dialog}
+      confirmText={tempUploadedResumeFile ? (isUploadingResume ? "Uploading..." : "Upload") : ""}
+      onConfirm={handleUploadConfirm}
       onCancel={handleUploadCancel}>
-        <ResumeUploader />
+      <ResumeUploader />
     </Modal>
   );
 

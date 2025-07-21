@@ -1,7 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
-import ResumeTailorForm from '../components/ResumeTailorForm/ResumeTailorForm';
-import LoginButton from '../components/GoogleLoginButton/GoogleLoginButton';
+import ResumeTailorForm from "../components/ResumeTailorForm/ResumeTailorForm";
+import LoginButton from "../components/GoogleLoginButton/GoogleLoginButton";
 
 export default function AppRoutes() {
   return (
