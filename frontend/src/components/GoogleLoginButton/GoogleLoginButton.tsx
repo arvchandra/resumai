@@ -13,7 +13,7 @@ export default function GoogleLoginButton() {
     if (isAuthenticated) {
       navigate("/tailor-resume");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated]);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {

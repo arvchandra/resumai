@@ -28,3 +28,22 @@ class Resume(TimestampMixin, models.Model):
                 Resume.objects.filter(user=self.user, is_default=True).exclude(id=self.id).update(is_default=False)
 
         super().save(*args, **kwargs)
+
+
+class TailoredResume(TimestampMixin, models.Model):
+    name = models.CharField()
+    company = models.CharField()
+    role = models.CharField()
+    job_posting = models.URLField()
+    file = models.FileField(upload_to="tailored_resumes/")
+
+    source = models.ForeignKey(Resume, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("name", "job_posting", "user"),
+                name="unique_resume_name_per_posting_per_user"
+            )
+        ]
