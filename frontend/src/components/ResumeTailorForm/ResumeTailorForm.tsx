@@ -96,8 +96,6 @@ export default function ResumeTailorForm() {
           {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
         </button>
       </div>
-    </div>
-    <div>
       <TailoredResumeTable />
     </div>
   )
