@@ -13,7 +13,7 @@ export default function GoogleLoginButton() {
     if (isAuthenticated) {
       navigate("/tailor-resume");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated]);
 
   // If already logged-in, redirect to tailor resume page
   // useEffect(() => {
