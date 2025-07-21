@@ -2,5 +2,5 @@ export default interface Resume {
   id: number;
   name: string;
   is_default: boolean;
-  created_at: string; 
+  created_at: string;
 }
