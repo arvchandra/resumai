@@ -33,11 +33,7 @@ export default function TailoredResumeTable() {
   const fetchWithAuth = useFetchWithAuth();
   const prevTailoredResumeData = useRef<unknown[]>([]);
 
-  const [rowData, setRowData] = useState<RowData[]>([
-    { company: "Tesla", name: "Arvind_Chandra_Tesla_071825.pdf", role: "Full-Stack Engineer", job_posting:"https://www.google.com", created_at: "2025-07-18" },
-    { company: "Ford", name: "Arvind_Chandra_Ford_062425.pdf", role: "Frontend Engineer", job_posting: "https://www.yahoo.com", created_at: "2025-06-24" },
-    { company: "OpenAI", name: "Arvind_Chandra_OpenAI_062325.pdf", role: "Software Engineer", job_posting: "https://www.microsoft.com", created_at: "2025-06-23" },
-  ]);
+  const [rowData, setRowData] = useState<RowData[]>([]);
 
   const [colDefs, setColumnDefs] = useState([
     { "field": 'name' },
@@ -48,7 +44,7 @@ export default function TailoredResumeTable() {
       "headerName": "Job",
       "cellRenderer": jobPostingCellRenderer,
     },
-    { "field": 'created_at'  },
+    { "field": 'created_at' },
     { 
       "field": 'download' ,
       "cellRenderer": downloadCellRenderer,
@@ -128,7 +124,6 @@ function formatTailoredResumesToAgGridRows({tailoredResumeData, columnDefs}: {ta
   
   return formattedTailoredResumeRows
 };
-
 
 function jobPostingCellRenderer({ data }: CustomCellRendererProps){
   return (
