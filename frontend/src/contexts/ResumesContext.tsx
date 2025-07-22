@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useReducer } from "react";
 
-import { fetchUserResumes } from "../http";
+import useFetchWithAuth from "../hooks/useFetchWithAuth";
 
 import type Resume from "../interfaces/Resume";
 
@@ -101,6 +101,7 @@ function resumesReducer(state: ResumesState, action: ResumesAction) {
 
 export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [resumesState, resumesDispatch] = useReducer(resumesReducer, resumesInitialState);
+  const fetchWithAuth = useFetchWithAuth();
 
   const handleSetSelectedResume = (resume: Resume) => {
     resumesDispatch({
@@ -128,8 +129,9 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
     resumesDispatch({ type: "FETCH_START" });
     await new Promise((resolve) => setTimeout(resolve, 1000));
     try {
-      const data: Resume[] = await fetchUserResumes();
-      resumesDispatch({ type: "SET_RESUMES", payload: data });
+      const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/resumes/");
+      const data: Resume[] = await response.json();
+      resumesDispatch({type: "SET_RESUMES", payload: data});
 
       // Set default resume as selected resume only if no
       // resume had previously been selected (i.e. initial load)
