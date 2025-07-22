@@ -1,16 +1,21 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import type { CustomCellRendererProps } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
-import type { ICellRendererParams, SizeColumnsToFitGridStrategy, SizeColumnsToFitProvidedWidthStrategy, SizeColumnsToContentStrategy} from 'ag-grid-community';
+import type { 
+  ICellRendererParams,
+  SizeColumnsToFitGridStrategy,
+  SizeColumnsToFitProvidedWidthStrategy, 
+  SizeColumnsToContentStrategy
+} from 'ag-grid-community';
 import fileDownloadIcon from "../../assets/images/download-file-icon.png";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 type TailoredResumeResponse = {
-  id: string,
+  id: string;
   name: string;
   company: string;
   role: string;
@@ -23,33 +28,32 @@ type RowData = {
   [key: string]: unknown;
 }
 
-type ColDefs = {
+type ColDef = {
   field: string;
   [key: string]: unknown;
 }
 
+const colDefs: ColDef[] = [
+  { "field": 'name' },
+  { "field": 'company' },
+  { "field": 'role' },
+  { 
+    "field": 'job_posting',
+    "headerName": "Job",
+    "cellRenderer": jobPostingCellRenderer,
+  },
+  { "field": 'created_at' },
+  { 
+    "field": 'download' ,
+    "cellRenderer": downloadCellRenderer,
+    "flex": 1
+  },
+];
 
 export default function TailoredResumeTable() {
   const fetchWithAuth = useFetchWithAuth();
-  const prevTailoredResumeData = useRef<unknown[]>([]);
 
   const [rowData, setRowData] = useState<RowData[]>([]);
-
-  const [colDefs, setColumnDefs] = useState([
-    { "field": 'name' },
-    { "field": 'company' },
-    { "field": 'role' },
-    { 
-      "field": 'job_posting',
-      "headerName": "Job",
-      "cellRenderer": jobPostingCellRenderer,
-    },
-    { "field": 'created_at' },
-    { 
-      "field": 'download' ,
-      "cellRenderer": downloadCellRenderer,
-    },
-  ]);
 
   const autoSizeStrategy = useMemo<
     | SizeColumnsToFitGridStrategy 
@@ -57,7 +61,7 @@ export default function TailoredResumeTable() {
     | SizeColumnsToContentStrategy
     >(() => ({
       type: "fitCellContents",
-      defaultMaxWidth: 120,
+      defaultMaxWidth: 100,
     }), [],
   );
 
@@ -75,15 +79,11 @@ export default function TailoredResumeTable() {
           throw new Error("Tailored resume response improperly formatted");
         }
 
-        // using stringify for deep equality comparison
-        if (JSON.stringify(tailoredResumeData) !== JSON.stringify(prevTailoredResumeData.current)) {  
-          const formattedRows = formatTailoredResumesToAgGridRows({ tailoredResumeData, columnDefs: colDefs });
-          
-          // TODO switch from typecasting once we have landed on a final table format
-          if (formattedRows) {
-            setRowData(formattedRows as RowData[]);
-            prevTailoredResumeData.current = tailoredResumeData;
-          }
+        const formattedRows = formatTailoredResumesToAgGridRows(tailoredResumeData, colDefs );
+        
+        // TODO switch from typecasting once we have landed on a final table format
+        if (formattedRows) {
+          setRowData(formattedRows as RowData[]);
         }
       } catch (err) {
         console.error('Fetch error:', err);
@@ -91,7 +91,7 @@ export default function TailoredResumeTable() {
     };
 
     fetchTailoredResumeData();
-  }, [colDefs]);
+  }, []);
   
 
   return (
@@ -108,7 +108,7 @@ export default function TailoredResumeTable() {
   );
 };
 
-function formatTailoredResumesToAgGridRows({tailoredResumeData, columnDefs}: {tailoredResumeData: TailoredResumeResponse[], columnDefs: ColDefs[]} ) {
+function formatTailoredResumesToAgGridRows( tailoredResumeData: TailoredResumeResponse[], columnDefs: ColDef[] ) {
   // retrieve our "field" key from each column in our Ag-Grid column definitions (e.g. "field": "company")
   const columnLabels = columnDefs.map((column) => column.field);
 
@@ -135,6 +135,6 @@ function jobPostingCellRenderer({ data }: CustomCellRendererProps){
 
 function downloadCellRenderer({ data }: ICellRendererParams){
   return (
-    <button onClick={() => console.log('File Downloaded')}><img src={fileDownloadIcon} width={15} height={15} alt="Download" /></button>
+    <img className="action-icon" src={fileDownloadIcon} width={15} height={15} alt="Download" onClick={() => console.log("file downloaded")} />
   );
 };
