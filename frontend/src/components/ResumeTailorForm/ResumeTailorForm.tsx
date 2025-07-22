@@ -1,11 +1,10 @@
 import { useState } from "react";
 
-import useFetch from "../../hooks/useFetch";
-import { fetchTailoredResumes } from "../../http";
+import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 import ResumeSelector from "../ResumeSelector/ResumeSelector";
+import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
-
 
 import "./ResumeTailorForm.css";
 import type Resume from "../../interfaces/Resume";
@@ -13,11 +12,11 @@ import type Resume from "../../interfaces/Resume";
 type ResumeToTailor = Resume | null;
 
 export default function ResumeTailorForm() {
-  const { fetchedData: tailoredResumes, isFetching, error } = useFetch(fetchTailoredResumes);
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
+  const fetchWithAuth = useFetchWithAuth();
 
-  const [jobPostingUrl, setJobPostingUrl] = useState('');
+  const [jobPostingUrl, setJobPostingUrl] = useState("");
   const [isTailoringResume, setIsTailoringResume] = useState(false);
 
   const disableTailorButton = isUploadingResume || isTailoringResume;
@@ -49,10 +48,10 @@ export default function ResumeTailorForm() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await fetch('http://127.0.0.1:8000/tailor/users/2/tailor-resume', {
-        method: 'POST',
+      const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/tailor-resume/", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           resume_id: resumeToTailor?.id,
@@ -62,7 +61,7 @@ export default function ResumeTailorForm() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.detail || 'Failed to tailor resume');
+        throw new Error(errData.detail || "Failed to tailor resume");
       }
 
       const data = await response.json();
@@ -80,24 +79,25 @@ export default function ResumeTailorForm() {
   };
 
   return (
-      <div className="resume-tailor-form">
-        <ResumeSelector />
-        <div className="form-field">
-          <label htmlFor="job-posting-url">LinkedIn Job Posting URL</label>
-          <input 
-            type="text" 
-            id="job-posting-url" 
-            name="job-posting-url"
-            placeholder="Enter URL" 
-            value={jobPostingUrl} 
-            onChange={(e) => setJobPostingUrl(e.target.value)}
-          />
-        </div>
-        <div>
-          <button className="btn btn-primary" onClick={handleTailorResumeClick} disabled={disableTailorButton}>
-            {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
-          </button>
-        </div>
+    <div className="resume-tailor-form">
+      <ResumeSelector />
+      <div className="form-field">
+        <label htmlFor="job-posting-url">LinkedIn Job Posting URL</label>
+        <input
+          type="text"
+          id="job-posting-url"
+          name="job-posting-url"
+          placeholder="Enter URL"
+          value={jobPostingUrl}
+          onChange={(e) => setJobPostingUrl(e.target.value)}
+        />
       </div>
+      <div>
+        <button className="btn btn-primary" onClick={handleTailorResumeClick} disabled={disableTailorButton}>
+          {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
+        </button>
+      </div>
+      <TailoredResumeTable />
+    </div>
   )
 }

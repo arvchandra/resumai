@@ -14,17 +14,17 @@ urlpatterns = [
         name="user-resumes",
     ),
     path(
-        "users/<int:user_id>/resumes/upload",
+        "users/<int:user_id>/resumes/upload/",
         UserResumeUploadView.as_view(),
         name="user-resume-upload",
     ),
     path(
-        "users/<int:user_id>/tailor-resume",
+        "users/<int:user_id>/tailor-resume/",
         TailorResumeView.as_view(),
         name="tailor-resume",
     ),
     path(
-        "users/<int:user_id>/tailored-resumes",
+        "users/<int:user_id>/tailored-resumes/",
         TailoredResumeListView.as_view(),
         name="tailored-resumes",
     ),
