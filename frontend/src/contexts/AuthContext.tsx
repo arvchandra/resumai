@@ -15,7 +15,7 @@ interface AuthContextType {
   accessToken: string | null;
   userInfo: User | null;
   isAuthenticated: boolean;
-  login: (newAccessToken: string, userInfo: User) => void;
+  login: (token: string, user: User) => void;
   logout: () => void;
   refreshLogin: () => Promise<RefreshTokenResponse | null>;
 }

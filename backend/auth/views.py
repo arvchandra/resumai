@@ -135,4 +135,3 @@ class LogoutView(APIView):
             path="/",
         )
         return response
-            
