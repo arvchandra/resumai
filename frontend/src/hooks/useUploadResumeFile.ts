@@ -22,7 +22,7 @@ export default function useUploadResumeFile() {
 
     try {
       const result = await fetchWithAuth("http://localhost:8000/tailor/users/2/resumes/upload/", {
-        method: 'POST',
+        method: "POST",
         body: formData
       });
 

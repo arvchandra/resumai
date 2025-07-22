@@ -49,7 +49,7 @@ export default function ResumeTailorForm() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/tailor-resume/", {
-        method: 'POST',
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },

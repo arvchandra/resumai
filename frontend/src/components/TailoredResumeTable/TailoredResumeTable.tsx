@@ -46,6 +46,7 @@ const colDefs: ColDef[] = [
   { 
     "field": 'download' ,
     "cellRenderer": downloadCellRenderer,
+    "width": 100
   },
 ];
 
@@ -100,6 +101,7 @@ export default function TailoredResumeTable() {
               rowData={rowData}
               columnDefs={colDefs}
               autoSizeStrategy={autoSizeStrategy}
+              domLayout="autoHeight"
           />
         </div>
     </div>
@@ -134,7 +136,7 @@ function jobPostingCellRenderer({ data }: CustomCellRendererProps) {
 function downloadCellRenderer({ data }: ICellRendererParams) {
   return (
     <img
-      className="action-icon"
+      className="action-icon-download"
       src={fileDownloadIcon}
       width={15}
       height={15}
