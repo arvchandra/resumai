@@ -43,10 +43,9 @@ const colDefs: ColDef[] = [
     "cellRenderer": jobPostingCellRenderer,
   },
   { "field": 'created_at' },
-  {
-    "field": 'download',
+  { 
+    "field": 'download' ,
     "cellRenderer": downloadCellRenderer,
-    "flex": 1
   },
 ];
 
@@ -59,10 +58,9 @@ export default function TailoredResumeTable() {
     | SizeColumnsToFitGridStrategy
     | SizeColumnsToFitProvidedWidthStrategy
     | SizeColumnsToContentStrategy
-  >(() => ({
-    type: "fitCellContents",
-    defaultMaxWidth: 100,
-  }), [],
+    >(() => ({
+      type: "fitCellContents",
+    }), [],
   );
 
   useEffect(() => {
@@ -96,22 +94,19 @@ export default function TailoredResumeTable() {
 
   return (
     <div className="form-field">
-      <label>Tailored Resumes:</label>
-      <div className="grid" style={{ height: 200 }}>
-        <AgGridReact
-          rowData={rowData}
-          columnDefs={colDefs}
-          autoSizeStrategy={autoSizeStrategy}
-        />
-      </div>
+        <label>Tailored Resumes:</label>
+        <div className="grid" style={{ height: 200 }}>
+          <AgGridReact
+              rowData={rowData}
+              columnDefs={colDefs}
+              autoSizeStrategy={autoSizeStrategy}
+          />
+        </div>
     </div>
   );
 };
 
-function formatTailoredResumesToAgGridRows(
-  tailoredResumeData: TailoredResumeResponse[], 
-  columnDefs: ColDef[]
-) {
+function formatTailoredResumesToAgGridRows( tailoredResumeData: TailoredResumeResponse[], columnDefs: ColDef[] ) {
   // retrieve our "field" key from each column in our Ag-Grid column definitions (e.g. "field": "company")
   const columnLabels = columnDefs.map((column) => column.field);
 
@@ -121,10 +116,10 @@ function formatTailoredResumesToAgGridRows(
     Object.fromEntries(
       columnLabels
         .filter(key => key in resume)
-        .map(key => [key, resume[key as keyof TailoredResumeResponse]])
+        .map(key => [key, resume[key as keyof TailoredResumeResponse] ])
     )
   );
-
+  
   return formattedTailoredResumeRows
 };
 
@@ -140,11 +135,11 @@ function downloadCellRenderer({ data }: ICellRendererParams) {
   return (
     <img
       className="action-icon"
-      src={fileDownloadIcon} 
-      width={15} 
-      height={15} 
-      alt="Download" 
-      onClick={() => console.log("file downloaded")} 
+      src={fileDownloadIcon}
+      width={15}
+      height={15}
+      alt="Download"
+      onClick={() => console.log("file downloaded")}
     />
   );
 };
