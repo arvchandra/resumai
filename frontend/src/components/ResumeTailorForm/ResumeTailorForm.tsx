@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 import ResumeSelector from "../ResumeSelector/ResumeSelector";
+import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
 
@@ -96,6 +97,7 @@ export default function ResumeTailorForm() {
           {isUploadingResume ? "Uploading Resume..." : isTailoringResume ? "Tailoring..." : "Tailor Resume"}
         </button>
       </div>
+      <TailoredResumeTable />
     </div>
   )
 }
