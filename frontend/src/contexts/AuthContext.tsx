@@ -29,13 +29,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (token: string, user: User) => {
     setAccessToken(token);
     setUserInfo(user);
-    sessionStorage.setItem("userInfo", JSON.stringify(user));
   }
 
   const logout = async () => {
     setAccessToken(null);
     setUserInfo(null);
-    sessionStorage.removeItem("userInfo");
 
     await fetch("http://localhost:8000/auth/logout/", {
       method: "POST",
