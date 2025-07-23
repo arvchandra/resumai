@@ -21,11 +21,11 @@ export default function useFetchWithAuth() {
 
     // If access token is expired, try refreshing once
     if (response.status === 401 && retry) {
-      const newAccessToken = await refreshLogin();
+      const accessTokenAndUser = await refreshLogin();
 
-      if (newAccessToken) {
+      if (accessTokenAndUser) {
         // Retry original request with new access token
-        headers.set("Authorization", `Bearer ${newAccessToken}`);
+        headers.set("Authorization", `Bearer ${accessTokenAndUser.accessToken}`);
         return fetch(url, {
           ...init,
           headers,

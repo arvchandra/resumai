@@ -6,9 +6,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from django.contrib.auth.models import User
+from django.http import JsonResponse
 from django.urls import reverse
 
 GOOGLE_USER_INFO_API_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
@@ -55,8 +56,9 @@ class GoogleLoginView(APIView):
             response = Response({
                 "accessToken": access_token,
                 "userInfo": {
-                    "username": user.email,
+                    "email": user.email,
                     "firstName": user.first_name,
+                    "lastName": user.last_name,
                 }
             })
 
@@ -69,7 +71,7 @@ class GoogleLoginView(APIView):
                 secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
                 samesite="Lax",  # or "Strict"
                 expires=datetime.now() + timedelta(days=7),
-                path=reverse('refresh-token'),  # Refresh token endpoint
+                path="/",  # Cookie can be access by any endpoint
             )
             return response
 
@@ -86,10 +88,50 @@ class RefreshTokenView(APIView):
             return Response({"error": "Refresh token missing"}, status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            refresh = RefreshToken(refresh_token)
-            access_token = str(refresh.access_token)
+            refresh_token_object = RefreshToken(refresh_token)
+            user_id = refresh_token_object["user_id"]
+            user = User.objects.get(id=user_id)
 
-            return Response({"accessToken": access_token}, status=status.HTTP_200_OK)
+            # Rotate/generate refresh token (JSON Web Token)
+            # and access token.
+            new_refresh = RefreshToken.for_user(user)
+            new_refresh_token = str(new_refresh)
+            new_access_token = str(new_refresh.access_token)
+
+            # Generate a response containing the new access token and user details
+            response = Response({
+                "accessToken": new_access_token,
+                "userInfo": {
+                    "email": user.email,
+                    "firstName": user.first_name,
+                    "lastName": user.last_name,
+                }
+            })
+
+            # The refresh token, set in an HTTPOnly cookie, can be used to obtain 
+            # new access tokens without re-authenticating the user.
+            response.set_cookie(
+                key="refreshToken",
+                value=new_refresh_token,
+                httponly=True,
+                secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
+                samesite="Lax",  # or "Strict"
+                expires=datetime.now() + timedelta(days=7),
+                path="/",  # Cookie can be access by any endpoint
+            )
+            return response
 
         except TokenError:
             return Response({"error": "Invalid or expired token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class LogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        response = JsonResponse({"message": "Logged out"})
+        response.delete_cookie(
+            "refreshToken", 
+            path="/",
+        )
+        return response

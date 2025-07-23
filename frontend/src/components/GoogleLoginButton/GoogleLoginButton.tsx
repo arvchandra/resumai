@@ -6,7 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function GoogleLoginButton() {
   const navigate = useNavigate();
-  const { setAccessToken, isAuthenticated } = useAuth();
+  const { isAuthenticated, login, logout } = useAuth();
 
   // If already logged-in, redirect to tailor resume page
   useEffect(() => {
@@ -15,7 +15,7 @@ export default function GoogleLoginButton() {
     }
   }, [isAuthenticated]);
 
-  const login = useGoogleLogin({
+  const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       const googleAccessToken = tokenResponse.access_token;
 
@@ -35,14 +35,20 @@ export default function GoogleLoginButton() {
         }
 
         const data = await response.json();
-        setAccessToken(data.accessToken);
+        login(data.accessToken, data.userInfo);
         navigate("/tailor-resume");
       } catch (error) {
+        logout();
         console.error("Login error:", error);
       }
     },
     onError: () => console.error("Google Login Failed"),
   });
 
-  return <button className="btn btn-primary" onClick={() => login()}>Login with Google</button>;
+  return (
+    <div className="btn-action-row">
+      <button className="btn btn-primary" onClick={() => googleLogin()}>Login with Google</button>
+      <button className="btn btn-cancel" onClick={logout}>Logout</button>
+    </div>
+  )
 }

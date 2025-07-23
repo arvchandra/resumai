@@ -1,29 +1,60 @@
 import React, { createContext, useContext, useState } from "react";
 
+interface User {
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface RefreshTokenResponse {
+  accessToken: string;
+  userInfo: User;
+}
+
 interface AuthContextType {
   accessToken: string | null;
+  userInfo: User | null;
   isAuthenticated: boolean;
-  setAccessToken: (token: string | null) => void;
-  refreshLogin: () => Promise<string | null>;
+  login: (token: string, user: User) => void;
+  logout: () => void;
+  refreshLogin: () => Promise<RefreshTokenResponse | null>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<User | null>(null);
 
-  const refreshLogin = async (): Promise<string | null> => {
+  const login = (token: string, user: User) => {
+    setAccessToken(token);
+    setUserInfo(user);
+  }
+
+  const logout = async () => {
+    setAccessToken(null);
+    setUserInfo(null);
+
+    await fetch("http://localhost:8000/auth/logout/", {
+      method: "POST",
+      credentials: "include", // This includes the refresh token cookie with the request
+    });
+  }
+
+  const refreshLogin = async (): Promise<RefreshTokenResponse | null> => {
     const response = await fetch("http://localhost:8000/auth/token/refresh/", {
       method: "POST",
       credentials: "include", // This includes the refresh token cookie with the request
     });
 
     if (response.ok) {
-      const data = await response.json();
+      const accessTokenAndUser: RefreshTokenResponse = await response.json();
 
-      if (data.accessToken) {
-        setAccessToken(data.accessToken);
-        return data.accessToken;
+      if (accessTokenAndUser) {
+        login(accessTokenAndUser.accessToken, accessTokenAndUser.userInfo);
+        return accessTokenAndUser;
+      } else {
+        logout();
       }
     }
 
@@ -32,8 +63,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const contextValue: AuthContextType = {
     accessToken,
+    userInfo,
     isAuthenticated: !!accessToken,
-    setAccessToken,
+    login,
+    logout,
     refreshLogin,
   }
 

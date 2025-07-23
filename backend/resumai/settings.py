@@ -28,7 +28,6 @@ environ.Env.read_env(os.path.join(BASE_DIR, 'resumai/.env'))
 
 # Set environment variables 
 OPENAI_API_KEY = env('OPENAI_API_KEY')
-GOOGLE_OAUTH_CLIENT_ID = env('GOOGLE_OAUTH_CLIENT_ID')
 
 # JSON Web Token (JWT) settings
 SIMPLE_JWT = {
