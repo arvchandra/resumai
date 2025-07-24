@@ -6,8 +6,6 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
-
 
 from django.http import FileResponse
 from django.contrib.auth.models import User
@@ -88,7 +86,6 @@ class TailoredResumeListView(ListAPIView):
 
 
 class TailoredResumeDownloadView(APIView):
-
     def get(self, request, *args, **kwargs):
         tailored_resume_id, user_id = self.kwargs["tailored_resume_id"], self.kwargs["user_id"]
 

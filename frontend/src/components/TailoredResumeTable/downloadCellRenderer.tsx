@@ -7,8 +7,6 @@ const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
 
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       // TODO replace with current user
       const response = await fetchWithAuth(`http://localhost:8000/tailor/users/2/tailor-resume/${tailoredResumeId}/download`);
 
@@ -17,9 +15,8 @@ const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
         throw new Error(errData.detail || "Failed to download resume");
       }
 
-      const blob = await response.blob();
-
       // Create a temporary link to trigger the download
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
