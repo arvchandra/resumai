@@ -6,6 +6,8 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+
 
 from django.http import FileResponse
 from django.contrib.auth.models import User
@@ -88,39 +90,22 @@ class TailoredResumeListView(ListAPIView):
 class TailoredResumeDownloadView(APIView):
 
     def get(self, request, *args, **kwargs):
-        user_id = self.kwargs["user_id"]
-        tailored_resume_id =  self.kwargs["tailored_resume_id"]
+        tailored_resume_id, user_id = self.kwargs["tailored_resume_id"], self.kwargs["user_id"]
+
         try:
-            tailored_resume = TailoredResume.objects.get(pk=tailored_resume_id)
-            if tailored_resume.user.id != user_id:
-                return Response(
-                    {
-                        "error": "You cannot access this resume"
-                    },
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            if not tailored_resume.file:
-                return Response(
-                    {
-                        "error": "File is not accessible"
-                    },
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            print(tailored_resume.file)
-            print(tailored_resume.file.open())
-            
-            # return Response(
-            #     status=status.HTTP_200_OK
-            # )
-            
-            # with open(tailored_resume.file, 'r') as file:
-            return FileResponse(tailored_resume.file.read(), content_type='application/pdf')
-            
-        except (TailoredResume.DoesNotExist, TailoredResume.MultipleObjectsReturned) as e:
-            # TODO error handling for get method
-            print(e)
+            tailored_resume = TailoredResume.objects.get(pk=tailored_resume_id, user_id=user_id)
+
+            return FileResponse(tailored_resume.file.open(), 'rb', as_attachment=True)
+        except TailoredResume.DoesNotExist:
+            # TODO error handling
+            return Response(
+                {
+                    "error": "File is not accessible"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except TailoredResume.MultipleObjectsReturned:
+            # TODO error handling
             return Response(
                     {
                         "error": "Could not retrieve correct file"
