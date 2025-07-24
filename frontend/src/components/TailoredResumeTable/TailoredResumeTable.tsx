@@ -4,7 +4,7 @@ import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import type { CustomCellRendererProps } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
-import DownloadCellRenderer from './downloadCellRenderer.tsx';
+import DownloadCellRenderer from './DownloadCellRenderer.tsx';
 import type {
   SizeColumnsToFitGridStrategy,
   SizeColumnsToFitProvidedWidthStrategy,
