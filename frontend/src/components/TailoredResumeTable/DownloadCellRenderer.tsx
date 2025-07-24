@@ -8,7 +8,7 @@ const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
     try {
       // TODO replace with current user
-      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/2/tailor-resume/${tailoredResumeId}/download`);
+      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/2/tailored-resume/${tailoredResumeId}/download`);
 
       if (!response.ok) {
         const errData = await response.json();
