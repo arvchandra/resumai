@@ -109,13 +109,11 @@
 .icon {
   cursor: pointer;
   display: block;
-  height: 2rem;
-  width: 2rem;
-}
-
-.action-icon {
-  cursor: pointer;
-  display: block;
   height: 1rem;
   width: 1rem;
+}
+
+.menu-icon {
+  height: 0.8rem;
+  width: 0.8rem;
 }

@@ -6,14 +6,14 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
   min-height: 300px;
   width: 450px;
-  padding: 2rem;
 }
 
 .main {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding: 2rem;
 }
