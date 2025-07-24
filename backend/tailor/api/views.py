@@ -7,13 +7,14 @@ from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.http import FileResponse
 from django.contrib.auth.models import User
 from django.conf import settings
 
-from tailor.api.serializers import FileUploadSerializer, ResumeSerializer
+from tailor.api.serializers import FileUploadSerializer, ResumeSerializer, TailoredResumeSerializer
 from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
-from tailor.models import Resume
+from tailor.models import Resume, TailoredResume
 
 
 class ParsingError(Exception):
@@ -75,6 +76,40 @@ class UserResumeUploadView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class TailoredResumeListView(ListAPIView):
+    serializer_class = TailoredResumeSerializer
+
+    def get_queryset(self):
+        user_id = self.kwargs["user_id"]
+        return TailoredResume.objects.filter(user__id=user_id).order_by('-created_at')
+
+
+class TailoredResumeDownloadView(APIView):
+    def get(self, request, *args, **kwargs):
+        tailored_resume_id, user_id = self.kwargs["tailored_resume_id"], self.kwargs["user_id"]
+
+        try:
+            tailored_resume = TailoredResume.objects.get(pk=tailored_resume_id, user_id=user_id)
+
+            return FileResponse(tailored_resume.file.open(), 'rb', as_attachment=True)
+        except TailoredResume.DoesNotExist:
+            # TODO error handling
+            return Response(
+                {
+                    "error": "File is not accessible"
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except TailoredResume.MultipleObjectsReturned:
+            # TODO error handling
+            return Response(
+                    {
+                        "error": "Could not retrieve correct file"
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
 
 class TailorResumeView(APIView):
     """
@@ -172,13 +207,3 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class TailoredResumeListView(APIView):
-    def get(self, request, **kwargs):
-        user_id = self.kwargs["user_id"]
-        return Response(
-            {"Status": "Great job!",
-             "user": user_id},
-            status.HTTP_200_OK,
-        )
