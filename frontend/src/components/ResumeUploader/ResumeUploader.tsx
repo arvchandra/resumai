@@ -40,7 +40,7 @@ export default function ResumeUploader() {
     resumeUploaderContent = (
       <div className="temp-uploaded-file-container">
         <span className="temp-uploaded-file-name">{tempUploadedResumeFile.name}</span>
-        <img className="action-icon" src={removeFileIcon} title="remove" onClick={handleRemoveFileClick} alt="file-remove" />
+        <img className="icon" src={removeFileIcon} title="remove" onClick={handleRemoveFileClick} alt="file-remove" />
       </div>
     );
   } else {
