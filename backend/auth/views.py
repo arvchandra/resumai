@@ -56,6 +56,7 @@ class GoogleLoginView(APIView):
             response = Response({
                 "accessToken": access_token,
                 "userInfo": {
+                    "id": user.id,
                     "email": user.email,
                     "firstName": user.first_name,
                     "lastName": user.last_name,
@@ -102,6 +103,7 @@ class RefreshTokenView(APIView):
             response = Response({
                 "accessToken": new_access_token,
                 "userInfo": {
+                    "id": user.id,
                     "email": user.email,
                     "firstName": user.first_name,
                     "lastName": user.last_name,

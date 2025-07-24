@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { useAuth } from "../../contexts/AuthContext";
 import type { User } from "../../contexts/AuthContext";
@@ -16,15 +16,17 @@ export default function UserMenu({ userInfo }: UserMenuProps) {
 
   const { logout } = useAuth();
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const handleClickOutsideMenu = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setMenuOpen(false);
+      document.removeEventListener('mousedown', handleClickOutsideMenu);
+    }
+  };
+
+  function handleUserIconClick() {
+    setMenuOpen(!menuOpen);
+    document.addEventListener('mousedown', handleClickOutsideMenu);
+  }
 
   if (!userInfo) {
     return null;
@@ -34,7 +36,7 @@ export default function UserMenu({ userInfo }: UserMenuProps) {
 
   return (
     <div ref={menuRef}>
-      <div className="user-icon" onClick={() => setMenuOpen(!menuOpen)}>
+      <div className="user-icon" onClick={handleUserIconClick}>
         {userInitials}
       </div>
       {menuOpen && (
