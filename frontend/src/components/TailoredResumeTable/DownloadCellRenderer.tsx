@@ -32,9 +32,8 @@ const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
 
   return (
     <img
-      src={fileDownloadIcon}     
-      width={15}
-      height={15}
+      className="icon"
+      src={fileDownloadIcon}
       alt="Download"
       onClick={() => handleDownloadClick(data.id, data.name)}
     />
