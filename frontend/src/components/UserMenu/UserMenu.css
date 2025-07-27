@@ -1,3 +1,7 @@
+.user-icon-menu-container {
+  position: relative;
+}
+
 .user-icon {
   align-items: center;
   background-color: #000;
@@ -29,10 +33,10 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem;
-  right: auto;
+  right: 0;
   top: auto;
   margin-top: 0.5rem;
-  transform: translateX(-76%); 
+  transform: translateX(1rem); 
 }
 
 .user-dropdown-menu .user-icon {

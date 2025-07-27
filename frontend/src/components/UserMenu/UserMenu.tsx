@@ -35,7 +35,7 @@ export default function UserMenu({ userInfo }: UserMenuProps) {
   const userInitials = userInfo.firstName[0] + (userInfo.lastName ? userInfo.lastName[0] : '');
 
   return (
-    <div ref={menuRef}>
+    <div className="user-icon-menu-container" ref={menuRef}>
       <div className="user-icon" onClick={handleUserIconClick}>
         {userInitials}
       </div>
