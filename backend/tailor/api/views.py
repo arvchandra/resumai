@@ -178,6 +178,12 @@ class TailorResumeView(APIView):
                     }
                 }
             # response = client.responses.create(prompt=prompt)
+            response = {
+                "output":
+            }
+            if not all(response["company"], response["role"]):
+
+
             tailored_resume = resume_document.generate_copy()
 
             return Response(
