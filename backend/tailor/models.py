@@ -43,7 +43,7 @@ class TailoredResume(TimestampMixin, models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("name", "job_posting", "user"),
+                fields=("name", "job_posting_url", "user"),
                 name="unique_resume_name_per_posting_per_user"
             )
         ]
