@@ -17,9 +17,7 @@ from tailor.domain.document import DocumentFactory
 from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume, TailoredResume
 
-
-class ParsingError(Exception):
-    pass
+from resumai.backend.tailor.exceptions import ParsingError
 
 
 class UserResumeListView(ListAPIView):
@@ -137,78 +135,31 @@ class TailorResumeView(APIView):
     """
 
     def post(self, request, *args, **kwargs):
-        user_id: int = int(self.kwargs["user_id"])
         resume_id: int = int(request.data["resume_id"])
+        user_id: int = int(self.kwargs["user_id"])
         job_posting_url: str = request.data["job_posting_url"]
 
         # Validate that logged in user matches the user referenced in the request URL
         # TODO: request.user.id == user_id  (must implement user login/auth first)
 
-        # Validate that the resume exists and it is for the current user
-        resume = None
         try:
-            resume = Resume.objects.get(id=resume_id, user_id=user_id)
-        except Resume.DoesNotExist:
-            raise NotFound("Resume not found.")
+            tailored_resume = TailoredResume.objects.create_from_params(
+                resume_id=resume_id,
+                user_id=user_id,
+                job_posting_url=job_posting_url
+            )
 
-        # TODO: Move this logic into JobPosting class
-        # Validate that the job posting URL is a LinkedIn URL
-        if "linkedin.com" not in job_posting_url:
-            raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
-
-        try:
-            # Get text content of resume
-            resume_document = DocumentFactory.create(resume.file)
-            resume_text = resume_document.get_text()
-            if not resume_text:
-                raise ParsingError("Unable to parse resume")
-
-            # Call job posting scraper + parser
-            linkedin_job_posting = LinkedInPosting(job_posting_url)
-            job_posting_text = linkedin_job_posting.get_text()
-        except ParsingError as error:
+            return Response(
+                {
+                    "tailored_resume_id": tailored_resume.id,
+                },
+                status=status.HTTP_201_CREATED
+            )
+        # TODO remove Exception from error handling here
+        except (ParsingError, ValidationError, Exception) as error:
             return Response(
                 {
                     "error": error
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-        try:
-            class ParsedResumeAndJobDetails(BaseModel):
-                most_relevant_resume_bullets: list[str]
-                non_relevant_bullet_points: list[str]
-                job_posting_company: str
-                job_posting_role: str
-
-            client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            prompt = {
-                    "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-                    "version": "9",
-                    "variables": {
-                        "job_posting": job_posting_text,
-                        "resume": resume_text
-                    }
-                }
-
-            response = client.responses.parse(prompt=prompt, text_format=ParsedResumeAndJobDetails)
-
-            return Response(
-                {
-                    "user_id": user_id,
-                    "resume_name": resume.name,
-                    "job_posting_url": job_posting_url,
-                    "resume_text": resume_text,
-                    "job_posting_text": job_posting_text,
-                    "output_text": response.output_parsed,
-                },
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            #TODO add error handling
-            return Response(
-                {
-                    "error": e
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
