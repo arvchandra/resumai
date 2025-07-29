@@ -6,6 +6,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from pydantic import BaseModel
 
 from django.http import FileResponse
 from django.contrib.auth.models import User
@@ -174,17 +175,26 @@ class TailorResumeView(APIView):
             )
 
         try:
-            # Send request to AI API and receive tailored resume response -- Max
+            class ParsedResumeAndJobDetails(BaseModel):
+                most_relevant_resume_bullets: list[str]
+                non_relevant_bullet_points: list[str]
+                job_posting_company: str
+                job_posting_role: str
+
             client = OpenAI(api_key=settings.OPENAI_API_KEY)
             prompt = {
                     "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-                    "version": "5",
+                    "version": "9",
                     "variables": {
                         "job_posting": job_posting_text,
                         "resume": resume_text
                     }
                 }
-            response = client.responses.create(prompt=prompt)
+
+            response = client.responses.parse(prompt=prompt, text_format=ParsedResumeAndJobDetails)
+
+            print(resume_text)
+            print(response.output_parsed)
 
             return Response(
                 {
@@ -193,7 +203,7 @@ class TailorResumeView(APIView):
                     "job_posting_url": job_posting_url,
                     "resume_text": resume_text,
                     "job_posting_text": job_posting_text,
-                    "output_text": response.output_text,
+                    "output_text": response.output_parsed,
                 },
                 status=status.HTTP_200_OK
             )
