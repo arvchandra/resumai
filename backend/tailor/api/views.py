@@ -1,23 +1,18 @@
 import os
 
-from openai import OpenAI
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from pydantic import BaseModel
 
 from django.http import FileResponse
 from django.contrib.auth.models import User
-from django.conf import settings
 
 from tailor.api.serializers import FileUploadSerializer, ResumeSerializer, TailoredResumeSerializer
-from tailor.domain.document import DocumentFactory
-from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume, TailoredResume
 
-from resumai.backend.tailor.exceptions import ParsingError
+from tailor.exceptions import ParsingError
 
 
 class UserResumeListView(ListAPIView):
@@ -115,10 +110,11 @@ class TailorResumeView(APIView):
     API endpoint that performs the resume tailoring tasks.
 
     - Accepts a POST request with a payload containing a Resume ID and a Job Posting URL.
-    - Builds a prompt containing the parsed resume text and job description, and sends
-      the request to the AI API.
-    - Receives the response from the AI API and formats the tailored resume content.
-    - Responds with the formatted tailored resume content if the process was successful.
+    - Sends the payload to TailoredResumeManager that uses it to fetch the resume and parses the job posting
+    - Builds a prompt from the parsed resume text and job description, and sends
+      the request to OpenAI API.
+    - Creates the TailoredResume object using the parsed resume, job description, and OpenAI response.
+    - Responds with the TailoredResume id if the process was successful.
 
     Example request:
         POST /tailor/users/<int:user_id>/tailor-resume
@@ -130,7 +126,7 @@ class TailorResumeView(APIView):
             }
 
     Responses:
-        200 OK
+        201 Created
         400 Bad Request
     """
 

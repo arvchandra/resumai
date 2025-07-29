@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from resumai.backend.tailor.exceptions import ParsingError
+from tailor.exceptions import ParsingError
 
 
 class Document(ABC):

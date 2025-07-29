@@ -1,11 +1,12 @@
+import json
+
 from django.contrib.auth.models import User
 from django.db import models
 from rest_framework.exceptions import NotFound, ValidationError
 
 from .mixins import TimestampMixin
 
-from resumai.backend.tailor.domain.document import DocumentFactory
-from resumai.backend.tailor.domain.openai_api import fetch_openai_response
+from .domain.openai_api import fetch_openai_response
 
 
 class Resume(TimestampMixin, models.Model):
@@ -41,8 +42,8 @@ class TailoredResumeManager(models.Manager):
 
         openai_response = fetch_openai_response(template_resume, job_posting_url)
 
-        company = openai_response.get("job_posting_company")
-        role = openai_response.get("job_posting_role")
+        company = openai_response.job_posting_company
+        role = openai_response.job_posting_role
 
         # TODO replace with name builder function
         name = "Tailored_resume.pdf"
@@ -54,6 +55,7 @@ class TailoredResumeManager(models.Manager):
             "name": name,
             "company": company,
             "role": role,
+            # TODO need to return the formatted JobPosting url instead
             "job_posting_url": job_posting_url,
             "file": tailored_resume,
             "template_resume": template_resume,

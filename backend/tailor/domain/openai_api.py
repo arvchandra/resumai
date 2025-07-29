@@ -3,10 +3,9 @@ from openai import OpenAI
 from pydantic import BaseModel
 from django.conf import settings
 
-from resumai.backend.tailor.domain.document import DocumentFactory
-from resumai.backend.tailor.domain.job_posting import LinkedInPosting
-from resumai.backend.tailor.exceptions import ParsingError
-from resumai.backend.tailor.models import Resume
+from .document import DocumentFactory
+from .job_posting import LinkedInPosting
+from tailor.exceptions import ParsingError
 
 
 class ParsedResumeAndJobDetails(BaseModel):
@@ -16,7 +15,7 @@ class ParsedResumeAndJobDetails(BaseModel):
     job_posting_role: str
 
 
-def fetch_openai_response(resume: Resume, job_posting_url: str):
+def fetch_openai_response(resume, job_posting_url: str):
     resume_text = fetch_resume_text(resume)
     job_posting_text = fetch_job_posting_text(job_posting_url)
 
@@ -42,7 +41,7 @@ def fetch_openai_response(resume: Resume, job_posting_url: str):
     return response.output_parsed
 
 
-def fetch_resume_text(resume: Resume):
+def fetch_resume_text(resume):
     resume_document = DocumentFactory.create(resume.file)
     resume_text = resume_document.get_text()
 

@@ -1,7 +1,7 @@
 from urllib.parse import urlparse, parse_qs, urljoin
 from bs4 import BeautifulSoup
 import requests
-from resumai.backend.tailor.exceptions import ParsingError
+from tailor.exceptions import ParsingError
 
 from .base import JobPosting
 

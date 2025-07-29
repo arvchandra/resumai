@@ -1,5 +1,5 @@
 import pymupdf4llm
-from resumai.backend.tailor.exceptions import ParsingError
+from tailor.exceptions import ParsingError
 
 from .base import Document
 
