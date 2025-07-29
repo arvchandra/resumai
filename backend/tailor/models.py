@@ -35,10 +35,9 @@ class Resume(TimestampMixin, models.Model):
 
 
 class TailoredResumeManager(models.Manager):
-    def create_from_params(self, resume_id: int, user_id: int, job_posting_url: str):
+    def create_from_params(self, user_id: int, resume_id: int, job_posting_url: str):
         user = User.objects.get(pk=user_id)
         template_resume = self._fetch_resume(resume_id, user.id)
-        job_posting_url = job_posting_url
 
         openai_response = fetch_openai_response(template_resume, job_posting_url)
 
