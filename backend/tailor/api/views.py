@@ -193,9 +193,6 @@ class TailorResumeView(APIView):
 
             response = client.responses.parse(prompt=prompt, text_format=ParsedResumeAndJobDetails)
 
-            print(resume_text)
-            print(response.output_parsed)
-
             return Response(
                 {
                     "user_id": user_id,
