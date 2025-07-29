@@ -13,7 +13,7 @@ interface ResumesState {
 }
 
 interface ResumesMethods {
-  fetchResumes: () => Promise<void>;
+  fetchResumes: (userId: number) => Promise<void>;
   addUploadedResume: (resume: Resume) => void;
   setSelectedResume: (resume: Resume) => void;
   setTempUploadedResumeFile: (file: File | null) => void;
@@ -125,11 +125,11 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
   };
 
   // Async resumes fetching function
-  const fetchResumes = useCallback(async () => {
+  const fetchResumes = useCallback(async (userId: number) => {
     resumesDispatch({ type: "FETCH_START" });
     await new Promise((resolve) => setTimeout(resolve, 1000));
     try {
-      const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/resumes/");
+      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userId}/resumes/`);
       const data: Resume[] = await response.json();
       resumesDispatch({type: "SET_RESUMES", payload: data});
 
