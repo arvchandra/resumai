@@ -58,7 +58,6 @@
   flex-direction: row;
   gap: 0.75rem;
   padding: 0.35rem;
-  white-space: nowrap;
 }
 
 .user-name-email-container {
@@ -66,6 +65,7 @@
   flex-direction: column;
   align-items: flex-start;
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .menu-item {
