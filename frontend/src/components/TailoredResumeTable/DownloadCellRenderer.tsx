@@ -1,16 +1,16 @@
 import type { ICellRendererParams } from 'ag-grid-community';
-import useFetchWithAuth from "../../hooks/useFetchWithAuth";
+
+import { useAuthenticatedApi } from '../../api/api';
+
 import fileDownloadIcon from "../../assets/images/download-file-icon.png";
-import { useAuth } from '../../contexts/AuthContext';
 
 const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
-  const { userInfo } = useAuth();
-  const fetchWithAuth = useFetchWithAuth();
+  const { downloadTailoredResume } = useAuthenticatedApi()
 
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
     try {
       // TODO replace with current user
-      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userInfo!.id}/tailored-resume/${tailoredResumeId}/download`);
+      const response = await downloadTailoredResume(tailoredResumeId);
 
       if (!response.ok) {
         const errData = await response.json();

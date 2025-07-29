@@ -1,11 +1,10 @@
 import { useState } from "react";
 
-import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 import ResumeSelector from "../ResumeSelector/ResumeSelector";
 import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthenticatedApi } from "../../api/api";
 
 import "./ResumeTailorForm.css";
 import type Resume from "../../interfaces/Resume";
@@ -15,8 +14,7 @@ type ResumeToTailor = Resume | null;
 export default function ResumeTailorForm() {
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
-  const { userInfo } = useAuth();
-  const fetchWithAuth = useFetchWithAuth();
+  const { tailorResume } = useAuthenticatedApi();
 
   const [jobPostingUrl, setJobPostingUrl] = useState("");
   const [isTailoringResume, setIsTailoringResume] = useState(false);
@@ -50,16 +48,7 @@ export default function ResumeTailorForm() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userInfo!.id}/tailor-resume/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          resume_id: resumeToTailor?.id,
-          job_posting_url: jobPostingUrl
-        })
-      });
+      const response = await tailorResume(resumeToTailor!.id, jobPostingUrl);
 
       if (!response.ok) {
         const errData = await response.json();
@@ -71,7 +60,7 @@ export default function ResumeTailorForm() {
 
       // Fetch user resumes if this tailoring request
       // involved uploading the user's first resume.
-      if (isFirstUserResumeUpload) fetchResumes(userInfo!.id);
+      if (isFirstUserResumeUpload) fetchResumes();
     } catch (err) {
       console.log(err);
     } finally {

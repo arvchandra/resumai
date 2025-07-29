@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import useFetchWithAuth from "../../hooks/useFetchWithAuth";
 
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import type { CustomCellRendererProps } from 'ag-grid-react';
@@ -10,7 +9,8 @@ import type {
   SizeColumnsToFitProvidedWidthStrategy,
   SizeColumnsToContentStrategy
 } from 'ag-grid-community';
-import { useAuth } from "../../contexts/AuthContext";
+
+import { useAuthenticatedApi } from "../../api/api";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -34,16 +34,15 @@ const colDefs: ColDef[] = [
     "cellRenderer": jobPostingCellRenderer,
   },
   { "field": 'created_at' },
-  { 
-    "field": 'download' ,
+  {
+    "field": 'download',
     "cellRenderer": DownloadCellRenderer,
     "width": 100
   },
 ];
 
 export default function TailoredResumeTable() {
-  const { userInfo } = useAuth();
-  const fetchWithAuth = useFetchWithAuth();
+  const { getTailoredResumes } = useAuthenticatedApi();
 
   const [rowData, setRowData] = useState<RowData[]>([]);
 
@@ -59,7 +58,7 @@ export default function TailoredResumeTable() {
   useEffect(() => {
     const fetchTailoredResumeData = async () => {
       try {
-        const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userInfo!.id}/tailored-resumes`);
+        const response = await getTailoredResumes();
         const tailoredResumeData = await response.json();
 
         if (!response.ok) {

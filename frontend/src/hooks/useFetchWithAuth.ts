@@ -1,5 +1,11 @@
 import { useAuth } from "../contexts/AuthContext";
 
+export type fetchWithAuthSignature = (
+  url: string, 
+  init?: RequestInit, 
+  retry?: boolean,
+) => Promise<Response>;
+
 export default function useFetchWithAuth() {
   const { accessToken, refreshLogin } = useAuth();
 
