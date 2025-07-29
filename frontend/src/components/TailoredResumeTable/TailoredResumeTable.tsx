@@ -29,7 +29,7 @@ const colDefs: ColDef[] = [
   { "field": 'company' },
   { "field": 'role' },
   {
-    "field": 'job_posting',
+    "field": 'job_posting_url',
     "headerName": "Job",
     "cellRenderer": jobPostingCellRenderer,
   },

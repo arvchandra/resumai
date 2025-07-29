@@ -13,7 +13,7 @@ class ResumeSerializer(serializers.ModelSerializer):
 class TailoredResumeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TailoredResume
-        fields = ['id', 'name', 'company', 'role', 'job_posting', 'created_at']
+        fields = ['id', 'name', 'company', 'role', 'job_posting_url', 'created_at']
 
 
 class FileUploadSerializer(serializers.Serializer):

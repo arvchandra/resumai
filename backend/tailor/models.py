@@ -34,10 +34,10 @@ class TailoredResume(TimestampMixin, models.Model):
     name = models.CharField()
     company = models.CharField()
     role = models.CharField()
-    job_posting = models.URLField()
+    job_posting_url = models.URLField()
     file = models.FileField(upload_to="tailored_resumes/")
 
-    source = models.ForeignKey(Resume, on_delete=models.CASCADE)
+    template_resume = models.ForeignKey(Resume, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:
