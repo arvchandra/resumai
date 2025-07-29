@@ -4,11 +4,14 @@ import Modal from "../Modal/Modal";
 import ResumeUploader from "../ResumeUploader/ResumeUploader";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 import "./ResumeSelector.css";
 
 export default function ResumeSelector() {
   const dialog = useRef<HTMLDialogElement>(null);
+
+  const { userInfo } = useAuth();
 
   const {
     resumes,
@@ -25,8 +28,8 @@ export default function ResumeSelector() {
 
   // Fetch resumes on initial context load
   useEffect(() => {
-    fetchResumes();
-  }, [fetchResumes]);
+    fetchResumes(userInfo!.id);
+  }, []);
 
   // Set selected resume via dropdown selection
   const handleResumeSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {

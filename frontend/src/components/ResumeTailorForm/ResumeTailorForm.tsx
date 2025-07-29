@@ -5,6 +5,7 @@ import ResumeSelector from "../ResumeSelector/ResumeSelector";
 import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 import "./ResumeTailorForm.css";
 import type Resume from "../../interfaces/Resume";
@@ -14,6 +15,7 @@ type ResumeToTailor = Resume | null;
 export default function ResumeTailorForm() {
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
+  const { userInfo } = useAuth();
   const fetchWithAuth = useFetchWithAuth();
 
   const [jobPostingUrl, setJobPostingUrl] = useState("");
@@ -48,7 +50,7 @@ export default function ResumeTailorForm() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/tailor-resume/", {
+      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userInfo!.id}/tailor-resume/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,7 +71,7 @@ export default function ResumeTailorForm() {
 
       // Fetch user resumes if this tailoring request
       // involved uploading the user's first resume.
-      if (isFirstUserResumeUpload) fetchResumes();
+      if (isFirstUserResumeUpload) fetchResumes(userInfo!.id);
     } catch (err) {
       console.log(err);
     } finally {
