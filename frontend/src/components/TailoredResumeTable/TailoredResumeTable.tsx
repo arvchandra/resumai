@@ -10,6 +10,7 @@ import type {
   SizeColumnsToFitProvidedWidthStrategy,
   SizeColumnsToContentStrategy
 } from 'ag-grid-community';
+import { useAuth } from "../../contexts/AuthContext";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -41,6 +42,7 @@ const colDefs: ColDef[] = [
 ];
 
 export default function TailoredResumeTable() {
+  const { userInfo } = useAuth();
   const fetchWithAuth = useFetchWithAuth();
 
   const [rowData, setRowData] = useState<RowData[]>([]);
@@ -49,16 +51,15 @@ export default function TailoredResumeTable() {
     | SizeColumnsToFitGridStrategy
     | SizeColumnsToFitProvidedWidthStrategy
     | SizeColumnsToContentStrategy
-    >(() => ({
-      type: "fitCellContents",
-    }), [],
+  >(() => ({
+    type: "fitCellContents",
+  }), [],
   );
 
   useEffect(() => {
     const fetchTailoredResumeData = async () => {
       try {
-        // TODO replace with current user
-        const response = await fetchWithAuth("http://localhost:8000/tailor/users/2/tailored-resumes");
+        const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userInfo!.id}/tailored-resumes`);
         const tailoredResumeData = await response.json();
 
         if (!response.ok) {
@@ -83,15 +84,15 @@ export default function TailoredResumeTable() {
 
   return (
     <div className="form-field">
-        <label>Tailored Resumes:</label>
-        <div className="grid" style={{ height: 200 }}>
-          <AgGridReact
-              rowData={rowData}
-              columnDefs={colDefs}
-              autoSizeStrategy={autoSizeStrategy}
-              domLayout="autoHeight"
-          />
-        </div>
+      <label>Tailored Resumes:</label>
+      <div className="grid" style={{ height: 200 }}>
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={colDefs}
+          autoSizeStrategy={autoSizeStrategy}
+          domLayout="autoHeight"
+        />
+      </div>
     </div>
   );
 };
