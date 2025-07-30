@@ -29,7 +29,7 @@ const colDefs: ColDef[] = [
   { "field": 'company' },
   { "field": 'role' },
   {
-    "field": 'job_posting',
+    "field": 'job_posting_url',
     "headerName": "Job",
     "cellRenderer": jobPostingCellRenderer,
   },
@@ -99,7 +99,7 @@ export default function TailoredResumeTable() {
 
 function jobPostingCellRenderer({ data }: CustomCellRendererProps) {
   return (
-    <a href={data.job_posting} target="_blank" rel="noopener noreferrer">
+    <a href={data.job_posting_url} target="_blank" rel="noopener noreferrer">
       Link
     </a>
   );

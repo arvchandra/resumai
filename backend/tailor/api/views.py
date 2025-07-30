@@ -1,25 +1,18 @@
 import os
 
-from openai import OpenAI
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from pydantic import BaseModel
 
 from django.http import FileResponse
 from django.contrib.auth.models import User
-from django.conf import settings
 
 from tailor.api.serializers import FileUploadSerializer, ResumeSerializer, TailoredResumeSerializer
-from tailor.domain.document import DocumentFactory
-from tailor.domain.job_posting import LinkedInPosting
 from tailor.models import Resume, TailoredResume
 
-
-class ParsingError(Exception):
-    pass
+from tailor.exceptions import ParsingError
 
 
 class UserResumeListView(ListAPIView):
@@ -69,7 +62,7 @@ class UserResumeUploadView(APIView):
 
             resume_serializer = ResumeSerializer(new_resume_upload)
             resume_json_data = {"uploadedResume": resume_serializer.data}
-
+            
             return Response(
                 resume_json_data,
                 status=status.HTTP_200_OK
@@ -117,10 +110,11 @@ class TailorResumeView(APIView):
     API endpoint that performs the resume tailoring tasks.
 
     - Accepts a POST request with a payload containing a Resume ID and a Job Posting URL.
-    - Builds a prompt containing the parsed resume text and job description, and sends
-      the request to the AI API.
-    - Receives the response from the AI API and formats the tailored resume content.
-    - Responds with the formatted tailored resume content if the process was successful.
+    - Sends the payload to TailoredResumeManager that uses it to fetch the resume and parses the job posting
+    - Builds a prompt from the parsed resume text and job description, and sends
+      the request to OpenAI API.
+    - Creates the TailoredResume object using the parsed resume, job description, and OpenAI response.
+    - Responds with the TailoredResume id if the process was successful.
 
     Example request:
         POST /tailor/users/<int:user_id>/tailor-resume
@@ -132,7 +126,7 @@ class TailorResumeView(APIView):
             }
 
     Responses:
-        200 OK
+        201 Created
         400 Bad Request
     """
 
@@ -144,70 +138,21 @@ class TailorResumeView(APIView):
         # Validate that logged in user matches the user referenced in the request URL
         # TODO: request.user.id == user_id  (must implement user login/auth first)
 
-        # Validate that the resume exists and it is for the current user
-        resume = None
         try:
-            resume = Resume.objects.get(id=resume_id, user_id=user_id)
-        except Resume.DoesNotExist:
-            raise NotFound("Resume not found.")
-
-        # TODO: Move this logic into JobPosting class
-        # Validate that the job posting URL is a LinkedIn URL
-        if "linkedin.com" not in job_posting_url:
-            raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
-
-        try:
-            # Get text content of resume
-            resume_document = DocumentFactory.create(resume.file)
-            resume_text = resume_document.get_text()
-            # TODO extract ParsingError
-            if not resume_text:
-                raise ParsingError("Unable to parse resume")
-
-            # Call job posting scraper + parser
-            linkedin_job_posting = LinkedInPosting(job_posting_url)
-            job_posting_text = linkedin_job_posting.get_text()
-
-        try:
-            class ParsedResumeAndJobDetails(BaseModel):
-                most_relevant_resume_bullets: list[str]
-                non_relevant_bullet_points: list[str]
-                job_posting_company: str
-                job_posting_role: str
-
-            client = OpenAI(api_key=settings.OPENAI_API_KEY)
-            prompt = {
-                    "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-                    "version": "9",
-                    "variables": {
-                        "job_posting": job_posting_text,
-                        "resume": resume_text
-                    }
-                }
-
-            response = client.responses.parse(prompt=prompt, text_format=ParsedResumeAndJobDetails)
+            tailored_resume = TailoredResume.objects.create_from_params(
+                user_id=user_id,
+                resume_id=resume_id,
+                job_posting_url=job_posting_url
+            )
 
             return Response(
                 {
-                    "user_id": user_id,
-                    "resume_name": resume.name,
-                    "job_posting_url": job_posting_url,
-                    "resume_text": resume_text,
-                    "job_posting_text": job_posting_text,
-                    "output_text": response.output_parsed,
+                    "tailored_resume_id": tailored_resume.id,
                 },
-                status=status.HTTP_200_OK
+                status=status.HTTP_201_CREATED
             )
-        except ParsingError as error:
-            # TODO add error handling
-            return Response(
-                {
-                    "error": error
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        except Exception as error:
-            # TODO add error handling
+        # TODO remove Exception from error handling here
+        except (ParsingError, ValidationError, Exception) as error:
             return Response(
                 {
                     "error": error

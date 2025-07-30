@@ -1,6 +1,8 @@
 from urllib.parse import urlparse, parse_qs, urljoin
 from bs4 import BeautifulSoup
 import requests
+from tailor.exceptions import ParsingError
+
 from .base import JobPosting
 
 JOB_POSTING_PATH = "https://www.linkedin.com/jobs/view"
@@ -21,7 +23,7 @@ class LinkedInPosting(JobPosting):
             query_params = parse_qs(parsed_url.query)
             job_ids = query_params.get(JOB_ID_QUERY_PARAM)
             if not job_ids:
-                raise self.ParsingError("Unable to parse job posting")
+                raise ParsingError("Unable to parse job posting")
 
             reformatted_url = f"{JOB_POSTING_PATH}/{job_ids[0]}"
 
@@ -43,6 +45,6 @@ class LinkedInPosting(JobPosting):
 
         # handles when we have an expired Job posting
         if not job_posting_text:
-            raise self.ParsingError("Unable to identify job text, job posting possibly expired")
+            raise ParsingError("Unable to identify job text, job posting possibly expired")
 
         return job_posting_text

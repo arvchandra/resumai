@@ -1,7 +1,12 @@
+import json
+
 from django.contrib.auth.models import User
 from django.db import models
+from rest_framework.exceptions import NotFound, ValidationError
 
-from tailor.mixins import TimestampMixin
+from .mixins import TimestampMixin
+
+from .domain.openai_api import fetch_openai_response
 
 
 class Resume(TimestampMixin, models.Model):
@@ -30,20 +35,69 @@ class Resume(TimestampMixin, models.Model):
         super().save(*args, **kwargs)
 
 
+class TailoredResumeManager(models.Manager):
+    def create_from_params(self, user_id: int, resume_id: int, job_posting_url: str):
+        user = User.objects.get(pk=user_id)
+        template_resume = self._fetch_resume(resume_id, user.id)
+
+        openai_response = fetch_openai_response(template_resume, job_posting_url)
+
+        company = openai_response.job_posting_company
+        role = openai_response.job_posting_role
+
+        # TODO replace with name builder function
+        name = "Tailored_resume.pdf"
+
+        # TODO replace with tailored resume generator function
+        tailored_resume = template_resume.file
+
+        model_fields = {
+            "name": name,
+            "company": company,
+            "role": role,
+            # TODO need to return the formatted JobPosting url instead
+            "job_posting_url": job_posting_url,
+            "file": tailored_resume,
+            "template_resume": template_resume,
+            "user": user
+        }
+
+        # check that all fields are defined
+        if any(value is None for value in model_fields.values()):
+            raise ValidationError("Unable to generate Tailored Resume due to empty field")
+
+        tailored_resume = TailoredResume(**model_fields)
+        tailored_resume.save()
+
+        return tailored_resume
+
+
+
+
+    def _fetch_resume(self, resume_id, user_id):
+        try:
+            template_resume = Resume.objects.get(id=resume_id, user_id=user_id)
+            return template_resume
+        except (Resume.DoesNotExist, Resume.MultipleObjectsReturned):
+            raise NotFound("Error retrieving resume")
+
+
 class TailoredResume(TimestampMixin, models.Model):
     name = models.CharField()
     company = models.CharField()
     role = models.CharField()
-    job_posting = models.URLField()
+    job_posting_url = models.URLField()
     file = models.FileField(upload_to="tailored_resumes/")
 
-    source = models.ForeignKey(Resume, on_delete=models.CASCADE)
+    template_resume = models.ForeignKey(Resume, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    objects = TailoredResumeManager()
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=("name", "job_posting", "user"),
+                fields=("name", "job_posting_url", "user"),
                 name="unique_resume_name_per_posting_per_user"
             )
         ]

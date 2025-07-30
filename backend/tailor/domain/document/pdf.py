@@ -1,24 +1,12 @@
 import shutil
 
 import pymupdf4llm
+from tailor.exceptions import ParsingError
 import pymupdf
 import os
 from django.conf import settings
 
 from .base import Document
-
-
-# HARDCODED_RESUME = "Max_Ingraham_Rakatansky_Work_Resume-11.pdf"
-HARDCODED_RESUME = "Arvind_Chandra_-_Resume_-_2025.pdf"
-HARDCODED_RESUME_PATH = f"/Users/maxingraham-rakatansky/resumai_django/resumai/backend/uploads/resumes/{HARDCODED_RESUME}"
-DESTINATION_DIR_PATH = f"/Users/maxingraham-rakatansky/resumai_django/resumai/backend/tailor/examples/{HARDCODED_RESUME}"
-HARDCODED_BULLETS = [
-            "●\u200b Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React. \n",
-            "●\u200b Retained our highest-revenue customer (worth $200,000/year) by resolving critical data integrity issues, which involved writing Django management commands and raw SQL to quickly discover and fix erroneous data mappings. \n",
-            "●\u200b Upgraded our Nextgov and Government Executive websites to a modern responsive web design, which were both subsequently nominated for a web design award on Folio. \n"
-            "●\u200b Interviewed and hired senior Django developers. \n"
-            "Deputy engineer for async AWS FIFO queue migration in Ruby to address timestamp-sensitive concurrency problem for Service-Level-Agreement(SLA) feature used by enterprise customers; leading post-release handover."
-        ]
 
 
 class PdfDocument(Document):
@@ -33,7 +21,11 @@ class PdfDocument(Document):
         self.page_break_rects = []
 
     def get_text(self):
-        return pymupdf4llm.to_markdown(self.file.path)
+        resume_text = pymupdf4llm.to_markdown(self.file.path)
+        if not resume_text:
+            raise ParsingError("Unable to parse resume")
+
+        return resume_text
 
     def generate_copy(self, bullets_to_redact=HARDCODED_BULLETS):
         # Clone PDF of file and save in examples
