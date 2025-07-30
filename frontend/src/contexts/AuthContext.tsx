@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 
+import { useAuthApi } from "../api/authApi";
+
 export interface User {
   id: number;
   email: string;
@@ -27,6 +29,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<User | null>(null);
 
+  const { logout: apiLogout, refreshToken } = useAuthApi();
+
   const login = (token: string, user: User) => {
     setAccessToken(token);
     setUserInfo(user);
@@ -36,17 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAccessToken(null);
     setUserInfo(null);
 
-    await fetch("http://localhost:8000/auth/logout/", {
-      method: "POST",
-      credentials: "include", // This includes the refresh token cookie with the request
-    });
+    await apiLogout();
   }
 
   const refreshLogin = async (): Promise<RefreshTokenResponse | null> => {
-    const response = await fetch("http://localhost:8000/auth/token/refresh/", {
-      method: "POST",
-      credentials: "include", // This includes the refresh token cookie with the request
-    });
+    const response = await refreshToken();
 
     if (response.ok) {
       const accessTokenAndUser: RefreshTokenResponse = await response.json();
