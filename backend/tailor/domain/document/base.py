@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from tailor.exceptions import ParsingError
 
 
 class Document(ABC):
@@ -10,7 +11,7 @@ class Document(ABC):
         """
         Parses the file and returns the text content.
         """
-        pass
+        raise ParsingError("Document Type has not been implemented")
 
     @abstractmethod
     def generate_copy(self):
