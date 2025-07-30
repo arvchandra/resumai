@@ -1,16 +1,16 @@
 import type { ICellRendererParams } from 'ag-grid-community';
 
-import { useAuthenticatedApi } from '../../api/api';
+import { useResumeApi } from "../../api/resumeApi.ts";
 
 import fileDownloadIcon from "../../assets/images/download-file-icon.png";
 
 const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
-  const { downloadTailoredResume } = useAuthenticatedApi()
+  const { downloadTailoredUserResume } = useResumeApi();
 
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
     try {
       // TODO replace with current user
-      const response = await downloadTailoredResume(tailoredResumeId);
+      const response = await downloadTailoredUserResume(tailoredResumeId);
 
       if (!response.ok) {
         const errData = await response.json();

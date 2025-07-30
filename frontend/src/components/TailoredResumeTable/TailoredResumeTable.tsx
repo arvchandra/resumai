@@ -10,7 +10,7 @@ import type {
   SizeColumnsToContentStrategy
 } from 'ag-grid-community';
 
-import { useAuthenticatedApi } from "../../api/api";
+import { useResumeApi } from "../../api/resumeApi.ts";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -42,7 +42,7 @@ const colDefs: ColDef[] = [
 ];
 
 export default function TailoredResumeTable() {
-  const { getTailoredResumes } = useAuthenticatedApi();
+  const { getTailoredUserResumes } = useResumeApi();
 
   const [rowData, setRowData] = useState<RowData[]>([]);
 
@@ -58,7 +58,7 @@ export default function TailoredResumeTable() {
   useEffect(() => {
     const fetchTailoredResumeData = async () => {
       try {
-        const response = await getTailoredResumes();
+        const response = await getTailoredUserResumes();
         const tailoredResumeData = await response.json();
 
         if (!response.ok) {

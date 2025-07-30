@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useReducer } from "react";
 
-import { useAuthenticatedApi } from "../api/api";
+import { useResumeApi } from "../api/resumeApi.ts";
 
 import type Resume from "../interfaces/Resume";
 
@@ -101,7 +101,7 @@ function resumesReducer(state: ResumesState, action: ResumesAction) {
 
 export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [resumesState, resumesDispatch] = useReducer(resumesReducer, resumesInitialState);
-  const { getUserResumes } = useAuthenticatedApi();
+  const { getUserResumes } = useResumeApi();
 
   const handleSetSelectedResume = (resume: Resume) => {
     resumesDispatch({

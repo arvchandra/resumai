@@ -4,7 +4,7 @@ import ResumeSelector from "../ResumeSelector/ResumeSelector";
 import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
-import { useAuthenticatedApi } from "../../api/api";
+import { useResumeApi } from "../../api/resumeApi.ts";
 
 import "./ResumeTailorForm.css";
 import type Resume from "../../interfaces/Resume";
@@ -14,7 +14,7 @@ type ResumeToTailor = Resume | null;
 export default function ResumeTailorForm() {
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
-  const { tailorResume } = useAuthenticatedApi();
+  const { tailorUserResume } = useResumeApi();
 
   const [jobPostingUrl, setJobPostingUrl] = useState("");
   const [isTailoringResume, setIsTailoringResume] = useState(false);
@@ -48,7 +48,7 @@ export default function ResumeTailorForm() {
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const response = await tailorResume(resumeToTailor!.id, jobPostingUrl);
+      const response = await tailorUserResume(resumeToTailor!.id, jobPostingUrl);
 
       if (!response.ok) {
         const errData = await response.json();

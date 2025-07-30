@@ -2,14 +2,14 @@ import { useEffect } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 
+import { useAuthApi } from "../../api/authApi";
 import { useAuth } from "../../contexts/AuthContext";
 
-import { useUnauthenticatedApi } from "../../api/api";
 
 export default function GoogleLoginButton() {
   const navigate = useNavigate();
   const { isAuthenticated, login, logout } = useAuth();
-  const { login: apiLogin } = useUnauthenticatedApi();
+  const { login: apiLogin } = useAuthApi();
 
   // If already logged-in, redirect to tailor resume page
   useEffect(() => {

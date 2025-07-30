@@ -1,11 +1,11 @@
 import { useState } from "react";
 
 import { useResumesContext } from "../contexts/ResumesContext";
-import { useAuthenticatedApi } from "../api/api";
+import { useResumeApi } from "../api/resumeApi.ts";
 
 export default function useUploadResumeFile() {
   const { tempUploadedResumeFile } = useResumesContext();
-  const { uploadUserResume } = useAuthenticatedApi();
+  const { uploadUserResume } = useResumeApi();
 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");

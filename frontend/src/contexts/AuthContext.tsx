@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 
-import { useUnauthenticatedApi } from "../api/api";
+import { useAuthApi } from "../api/authApi";
 
 export interface User {
   id: number;
@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<User | null>(null);
 
-  const { logout: apiLogout, refreshToken } = useUnauthenticatedApi();
+  const { logout: apiLogout, refreshToken } = useAuthApi();
 
   const login = (token: string, user: User) => {
     setAccessToken(token);
