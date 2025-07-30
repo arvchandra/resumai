@@ -6,7 +6,7 @@ export function useAuthApi() {
     login(googleAccessToken: string) {
       return fetch(`${AUTH_API_BASE_URL}/google-login/`, {
         method: "POST",
-        credentials: "include",
+        credentials: "include", // This includes the refresh token cookie with the request
         headers: {
           "Content-Type": "application/json",
         },
