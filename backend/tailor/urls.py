@@ -29,7 +29,7 @@ urlpatterns = [
         name="tailored-resumes",
     ),
     path(
-        "users/<int:user_id>/tailored-resume/<int:tailored_resume_id>/download",
+        "users/<int:user_id>/tailored-resume/<int:tailored_resume_id>/download/",
         TailoredResumeDownloadView.as_view(),
         name="tailored-resume-download",
     ),

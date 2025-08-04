@@ -2,11 +2,14 @@ import { useEffect } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
 
+import { useAuthApi } from "../../api/authApi";
 import { useAuth } from "../../contexts/AuthContext";
+
 
 export default function GoogleLoginButton() {
   const navigate = useNavigate();
   const { isAuthenticated, login, logout } = useAuth();
+  const { login: apiLogin } = useAuthApi();
 
   // If already logged-in, redirect to tailor resume page
   useEffect(() => {
@@ -20,14 +23,7 @@ export default function GoogleLoginButton() {
       const googleAccessToken = tokenResponse.access_token;
 
       try {
-        const response = await fetch("http://localhost:8000/auth/google-login/", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ googleAccessToken: googleAccessToken }),
-        });
+        const response = await apiLogin(googleAccessToken);
 
         if (!response.ok) {
           const errorData = await response.json();
