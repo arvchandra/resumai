@@ -125,7 +125,7 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
   };
 
   // Async resumes fetching function
-  const fetchResumes = useCallback(async () => {
+  const fetchResumes = async() => {
     resumesDispatch({ type: "FETCH_START" });
     await new Promise((resolve) => setTimeout(resolve, 1000));
     try {
@@ -151,7 +151,7 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
     }
 
     resumesDispatch({ type: "FETCH_STOP" });
-  }, [getUserResumes]);
+  };
 
   const ctxValue = {
     resumes: resumesState.resumes,
