@@ -42,19 +42,19 @@ class TailoredResumeManager(models.Manager):
         user = User.objects.get(pk=user_id)
         template_resume = self._fetch_resume(resume_id, user.id)
 
-        openai_response = fetch_openai_response(template_resume, job_posting_url)
-        print(openai_response)
+        # openai_response = fetch_openai_response(template_resume, job_posting_url)
+        # print(openai_response)
         # return NotFound
         #
-        company = openai_response.job_posting_company
-        role = openai_response.job_posting_role
-        bullets_to_redact = openai_response.non_relevant_bullet_points
+        # company = openai_response.job_posting_company
+        # role = openai_response.job_posting_role
+        # bullets_to_redact = openai_response.non_relevant_bullet_points
 
-        # company = "test_company"
-        # role = "test_role"
-        # bullets_to_redact = [
-        #     'Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React.',
-        # ]
+        company = "test_company"
+        role = "test_role"
+        bullets_to_redact = [
+            'Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React.',
+        ]
 
         name = f"{user.first_name}_{user.last_name}_{company}_{role}_Resume.pdf"
 

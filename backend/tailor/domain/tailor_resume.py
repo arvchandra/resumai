@@ -143,11 +143,8 @@ class TailorPdf:
 
     def redact_bullets_from_pdf(self, bullets_to_redact: [], template_pdf: pymupdf.Document):
         template_page = template_pdf[0]
-        # print(bullets_to_redact)
 
         self.redacted_rects = self.calculate_redacted_rects(bullets_to_redact, template_page)
-        print(self.redacted_rects)
-
         for redacted_rect in self.redacted_rects:
             template_page.add_redact_annot(redacted_rect)
 
@@ -183,57 +180,13 @@ class TailorPdf:
         redacted_index = 0
         total_offset_by = 0
         for text_block in redacted_page.get_text("blocks"):
-            template_rect = self._get_rect(text_block)
+            text_block_rect = self._get_rect(text_block)
 
-            # handle when nothing to redact or we've redacted everything
-            if self.redacted_rects and redacted_index < len(self.redacted_rects):
-                redacted_offset = 0
-                print("–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––")
-                print("made it to template rect comparison")
-                print("template_rect.y0")
-                while template_rect.y0 > self.redacted_rects[redacted_index].y0:
-                    redacted_rect = self.redacted_rects[redacted_index]
-                    redacted_offset += redacted_rect.height + self.line_break_offset
-                    redacted_index += 1
+            offset, redacted_index = self.calculate_rect_offset(redacted_index, text_block_rect)
+            total_offset_by += offset
 
-                total_offset_by += redacted_offset
-                if template_rect.y0 > redacted_rect.y1:
-                    print(f"textblock: {text_block}")
-
-                    print(f" offset is : {total_offset_by}")
-
-                    print(f"template rect is : {template_rect.y0}")
-                    print(f"redacted rect is : {redacted_rect.y1}")
-
-                    # y distance between top of first line of redacted text and bottom of last line of redacted text
-                    redacted_offset = redacted_rect.height
-
-                    print(f"height offset is : {redacted_offset}")
-
-                    # y distance between the last line of the redacted text and the first line of the non-redacted text
-                    line_break_offset = template_rect.y0 - redacted_rect.y1
-                    print(f"line break offset is : {line_break_offset}")
-
-                    # TODO handle two column offset
-                    total_offset_by += redacted_offset + line_break_offset
-                    redacted_index += 1
-
-            # print("made it to repositing")
-            #
-            # print("redacted info")
-            # print(redacted_index)
-            # print(len(self.redacted_rects))
-            #
-            # print("page info")
-            # print(tailored_page_unified.rect)
-            # print("block info")
-            # print(text_block)
-            # print(offset_by)
             repositioned_rect = self.calculate_updated_rect(text_block, total_offset_by)
-            # print("made it out of repositing")
-            # print(repositioned_rect)
-
-            interim_pdf_unified = self.isolate_repositioned_rect(repositioned_rect, redacted_pdf, template_rect)
+            interim_pdf_unified = self.isolate_repositioned_rect(repositioned_rect, redacted_pdf, text_block_rect)
 
             tailored_page_unified.show_pdf_page(
                 repositioned_rect,
@@ -244,6 +197,55 @@ class TailorPdf:
             interim_pdf_unified.close()
 
         return tailored_pdf_unified
+
+    def calculate_rect_offset(self, redacted_index: int, text_block_rect: pymupdf.Rect):
+
+        # handle when nothing to redact or we've reached the end of our list
+        if not self.redacted_rects or redacted_index >= len(self.redacted_rects):
+            return 0, redacted_index
+
+        # if the bottom of the text block rect is above the current redacted rect
+        if text_block_rect.y1 <= self.redacted_rects[redacted_index].y0:
+            return 0, redacted_index
+
+        # continue looping until redacted_rects[redacted_index] rect is below our text_block
+        redacted_offset = 0
+        updated_index = redacted_index
+        while text_block_rect.y0 > self.redacted_rects[updated_index].y1:
+
+            # TODO, replace with calculated line_break_spacing
+            # y distance between the last line of the redacted text and the first line of the non-redacted text
+            line_break_offset = text_block_rect.y0 - self.redacted_rects[updated_index].y1
+
+            # y distance between top of first line of redacted text and bottom of last line of redacted text
+            redacted_offset += self.redacted_rects[updated_index].height + line_break_offset
+            updated_index += 1
+
+            # terminates once we get to the end of our list
+            if updated_index >= len(self.redacted_rects):
+                break
+
+        # print(f"textblock: {text_block}")
+        #
+        #         print(f" offset is : {total_offset_by}")
+        #
+        #         print(f"template rect is : {text_block_rect.y0}")
+        #         print(f"redacted rect is : {redacted_rect.y1}")
+        # print("made it to repositing")
+        #
+        # print("redacted info")
+        # print(redacted_index)
+        # print(len(self.redacted_rects))
+        #
+        # print("page info")
+        # print(tailored_page_unified.rect)
+        # print("block info")
+        # print(text_block)
+        # print(offset_by)
+        # print("made it out of repositing")
+        # print(repositioned_rect)
+
+        return redacted_offset, updated_index
 
     def calculate_updated_rect(self, text_block, offset_by):
         updated_rect = self._get_rect(text_block, offset_by)
@@ -278,9 +280,9 @@ class TailorPdf:
         """
         This function takes our repositioned text block from the template resume and copies that Rect onto a
         temporary PDF. Because pymupdf's show_pdf_page will also copy all text, links, and annotations on the page,
-        not just the text inside the Rect (See Note: https://pymupdf.readthedocs.io/en/latest/page.html#Page.show_pdf_page)
+        not just the text inside the Rect (See: https://pymupdf.readthedocs.io/en/latest/page.html#Page.show_pdf_page)
         we need to annotate all the space around our repositioned text block and redact it to remove all extraneous
-        text/links. We then return the temporary PDF with only the text block.
+        text/links. We then return the temporary PDF page with only the text block.
         """
 
         interim_pdf_unified = pymupdf.open()
@@ -350,27 +352,15 @@ class TailorPdf:
 
         # distance from top of the page to the text block with the lowest y0 value (bottom of header)
         top_of_page = 0
-        bottom_of_header = min(text_block[1] for text_block in page.get_text("blocks"))
+        bottom_of_header = min(text_block[1] for text_block in page.get_text("blocks"))  # text_block[1] is y0
         header_height = top_of_page + bottom_of_header
 
         # distance from the bottom of the page to the text block with the largest y1 value (top of footer)
         bottom_of_page = page.rect.height
-        top_of_footer = max(text_block[3] for text_block in page.get_text("blocks"))
+        top_of_footer = max(text_block[3] for text_block in page.get_text("blocks"))  # text_block[3] is y1
         footer_height = bottom_of_page - top_of_footer
 
         return header_height, footer_height
-
-    @staticmethod
-    def _combine_rects(existing_rect: pymupdf.Rect, new_rect: pymupdf.Rect):
-        if not existing_rect:
-            return new_rect
-
-        new_x0 = min(existing_rect.x0, new_rect.x0)
-        new_y0 = min(existing_rect.y0, new_rect.y0)
-        new_x1 = max(existing_rect.x1, new_rect.x1)
-        new_y1 = max(existing_rect.y1, new_rect.y1)
-
-        return pymupdf.Rect(new_x0, new_y0, new_x1, new_y1)
 
     def _combine_rects_list(self, rect_list=[]):
         if not rect_list:
@@ -395,8 +385,6 @@ class TailorPdf:
         # extend to rectangle X coordinates to capture bullet symbol and \n line
         combined_rect = self.extend_borders_to_width(combined_rect)
         return combined_rect
-
-
 
     @staticmethod
     def _get_rect(block, offset=0):
