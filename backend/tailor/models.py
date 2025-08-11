@@ -1,9 +1,11 @@
 import json
-
+from io import BytesIO
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.files.base import ContentFile
 from rest_framework.exceptions import NotFound, ValidationError
 
+from .domain.tailor_resume import TailorPdf
 from .mixins import TimestampMixin
 
 from .domain.openai_api import fetch_openai_response
@@ -41,15 +43,27 @@ class TailoredResumeManager(models.Manager):
         template_resume = self._fetch_resume(resume_id, user.id)
 
         openai_response = fetch_openai_response(template_resume, job_posting_url)
-
+        print(openai_response)
+        # return NotFound
+        #
         company = openai_response.job_posting_company
         role = openai_response.job_posting_role
+        bullets_to_redact = openai_response.non_relevant_bullet_points
 
-        # TODO replace with name builder function
-        name = "Tailored_resume.pdf"
+        # company = "test_company"
+        # role = "test_role"
+        # bullets_to_redact = [
+        #     'Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React.',
+        # ]
 
-        # TODO replace with tailored resume generator function
-        tailored_resume = template_resume.file
+        name = f"{user.first_name}_{user.last_name}_{company}_{role}_Resume.pdf"
+
+        tailored_resume_in_bytes = TailorPdf(template_resume, bullets_to_redact).tailored_resume_in_bytes
+        print("made it out")
+        # raise NotFound("dont create file")
+        print()
+        tailored_resume = ContentFile(tailored_resume_in_bytes, name=name)
+        print("made it past content file")
 
         model_fields = {
             "name": name,
@@ -70,9 +84,6 @@ class TailoredResumeManager(models.Manager):
         tailored_resume.save()
 
         return tailored_resume
-
-
-
 
     def _fetch_resume(self, resume_id, user_id):
         try:

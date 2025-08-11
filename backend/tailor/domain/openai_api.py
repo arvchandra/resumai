@@ -19,16 +19,21 @@ def fetch_openai_response(resume, job_posting_url: str):
     resume_text = fetch_resume_text(resume)
     job_posting_text = fetch_job_posting_text(job_posting_url)
 
+    print(resume_text)
+    # raise ParsingError("exit early")
+
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
     prompt = {
         "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-        "version": "9",
+        "version": "14",
         "variables": {
             "job_posting": job_posting_text,
             "resume": resume_text
         }
     }
+
+    # response = client.responses.create(prompt=prompt)
 
     response = client.responses.parse(
         prompt=prompt,
