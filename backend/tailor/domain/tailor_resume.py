@@ -358,28 +358,28 @@ class TailorPdf:
 
         previous_text_rect = None
         for text_block in template_page_unified.get_text("blocks"):
-            text_rect = self._get_rect(text_block)
+            current_text_rect = self._get_rect(text_block)
 
             # If we don't have a previous text block or we've reached the end of our page_break_rects list
             if not previous_text_rect or page_break_index == len(page_break_heights):
-                previous_text_rect = text_rect
+                previous_text_rect = current_text_rect
                 continue
 
             # when we encounter a text block that is below a page break
-            if text_rect.y0 > page_break_heights[page_break_index]:
+            if current_text_rect.y0 > page_break_heights[page_break_index]:
                 # We want to calculate the distance between the last text block on the previous page
                 # and the first text block on the current page and create a Rect that matches it
                 page_break_x0 = 0
                 page_break_y0 = previous_text_rect.y1
                 page_break_x1 = page_width
-                page_break_y1 = text_rect.y0
+                page_break_y1 = current_text_rect.y0
                 page_break_rects.append(
                     self._get_rect([page_break_x0, page_break_y0, page_break_x1, page_break_y1])
                 )
 
                 page_break_index += 1
 
-            previous_text_rect = text_rect
+            previous_text_rect = current_text_rect
 
         return page_break_rects
 
