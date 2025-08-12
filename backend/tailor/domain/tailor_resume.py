@@ -83,41 +83,51 @@ class TailorPdf:
 
         return template_pdf_unified
 
-    def split_unified_pdf(self, unified_pdf):
+    def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
+        # TODO column spacing https://github.com/pymupdf/PyMuPDF/discussions/2259#discussioncomment-6669190
+
+        self.page_break_rects = self.calculate_page_break_spacing(template_pdf_unified[0])
+
+    def calculate_page_break_spacing(self, template_page_unified: pymupdf.Page):
         """
-        Splits our unified PDF into the number of pages found on our original template PDF
+        returns a list of page_break_rects that span from the bottom of text on a previous page (top of footer)
+        to the top of text on the current page (bottom of header)
         """
 
-        # unpacks template details dict values and checks if all are defined
+        # Note: get_text("blocks") returns array of tuples in the form:
+        # (x0, y0, x1, y1, "lines in the block", block_no, block_type)
+
         page_count, page_width, page_height = self.template_pdf_details.values()
-        if not all((page_count, page_width, page_height)):
-            # TODO Error Handling
-            raise Exception
+        page_break_heights = [page_height * i for i in range(1, page_count + 1)]
+        page_break_index = 0
+        page_break_rects = []
 
-        tailored_resume = pymupdf.open()
-        for page_number in range(0, page_count):
-            page_offset_height = page_height * page_number
-            unified_page_rect = pymupdf.Rect(
-                0,
-                0 + page_offset_height,
-                page_width,
-                page_height + page_offset_height
-            )
+        previous_text_rect = None
+        for text_block in template_page_unified.get_text("blocks"):
+            current_text_rect = self._get_rect(text_block)
 
-            resume_page = tailored_resume.new_page(
-                -1,
-                width=page_width,
-                height=page_height
-            )
+            # If we don't have a previous text block or we've reached the end of our page_break_rects list
+            if not previous_text_rect or page_break_index == len(page_break_heights):
+                previous_text_rect = current_text_rect
+                continue
 
-            resume_page.show_pdf_page(
-                resume_page.rect,
-                unified_pdf,
-                clip=unified_page_rect
-            )
+            # when we encounter a text block that is below a page break
+            if current_text_rect.y0 > page_break_heights[page_break_index]:
+                # We want to calculate the distance between the last text block on the previous page
+                # and the first text block on the current page and create a Rect that matches it
+                page_break_x0 = 0
+                page_break_y0 = previous_text_rect.y1
+                page_break_x1 = page_width
+                page_break_y1 = current_text_rect.y0
+                page_break_rects.append(
+                    self._get_rect([page_break_x0, page_break_y0, page_break_x1, page_break_y1])
+                )
 
-        # TODO remove any blank pages
-        return tailored_resume
+                page_break_index += 1
+
+            previous_text_rect = current_text_rect
+
+        return page_break_rects
 
     def redact_bullets_from_pdf(self, bullets_to_redact: [], template_pdf: pymupdf.Document):
         template_page = template_pdf[0]
@@ -249,6 +259,42 @@ class TailorPdf:
 
         return redacted_offset, current_redacted_rect_index
 
+    def split_unified_pdf(self, unified_pdf):
+        """
+        Splits our unified PDF into the number of pages found on our original template PDF
+        """
+
+        # unpacks template details dict values and checks if all are defined
+        page_count, page_width, page_height = self.template_pdf_details.values()
+        if not all((page_count, page_width, page_height)):
+            # TODO Error Handling
+            raise Exception
+
+        tailored_resume = pymupdf.open()
+        for page_number in range(0, page_count):
+            page_offset_height = page_height * page_number
+            unified_page_rect = pymupdf.Rect(
+                0,
+                0 + page_offset_height,
+                page_width,
+                page_height + page_offset_height
+            )
+
+            resume_page = tailored_resume.new_page(
+                -1,
+                width=page_width,
+                height=page_height
+            )
+
+            resume_page.show_pdf_page(
+                resume_page.rect,
+                unified_pdf,
+                clip=unified_page_rect
+            )
+
+        # TODO remove any blank pages
+        return tailored_resume
+
     def calculate_updated_rect(self, text_block, offset_by):
         """
         This function is meant to use our self.page_break_rects to reposition the rect passed in
@@ -336,52 +382,6 @@ class TailorPdf:
         interim_page_unified.apply_redactions()
         interim_pdf_unified.reload_page(interim_page_unified)
         return interim_pdf_unified
-
-    def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
-        # TODO column spacing https://github.com/pymupdf/PyMuPDF/discussions/2259#discussioncomment-6669190
-
-        self.page_break_rects = self.calculate_page_break_spacing(template_pdf_unified[0])
-
-    def calculate_page_break_spacing(self, template_page_unified: pymupdf.Page):
-        """
-        returns a list of page_break_rects that span from the bottom of text on a previous page (top of footer)
-        to the top of text on the current page (bottom of header)
-        """
-
-        # Note: get_text("blocks") returns array of tuples in the form:
-        # (x0, y0, x1, y1, "lines in the block", block_no, block_type)
-
-        page_count, page_width, page_height = self.template_pdf_details.values()
-        page_break_heights = [page_height * i for i in range(1, page_count + 1)]
-        page_break_index = 0
-        page_break_rects = []
-
-        previous_text_rect = None
-        for text_block in template_page_unified.get_text("blocks"):
-            current_text_rect = self._get_rect(text_block)
-
-            # If we don't have a previous text block or we've reached the end of our page_break_rects list
-            if not previous_text_rect or page_break_index == len(page_break_heights):
-                previous_text_rect = current_text_rect
-                continue
-
-            # when we encounter a text block that is below a page break
-            if current_text_rect.y0 > page_break_heights[page_break_index]:
-                # We want to calculate the distance between the last text block on the previous page
-                # and the first text block on the current page and create a Rect that matches it
-                page_break_x0 = 0
-                page_break_y0 = previous_text_rect.y1
-                page_break_x1 = page_width
-                page_break_y1 = current_text_rect.y0
-                page_break_rects.append(
-                    self._get_rect([page_break_x0, page_break_y0, page_break_x1, page_break_y1])
-                )
-
-                page_break_index += 1
-
-            previous_text_rect = current_text_rect
-
-        return page_break_rects
 
     def _combine_rects(self, rect_list=[]):
         if not rect_list:
