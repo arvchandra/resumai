@@ -42,26 +42,25 @@ class TailoredResumeManager(models.Manager):
         user = User.objects.get(pk=user_id)
         template_resume = self._fetch_resume(resume_id, user.id)
 
-        # openai_response = fetch_openai_response(template_resume, job_posting_url)
-        # print(openai_response)
+        openai_response = fetch_openai_response(template_resume, job_posting_url)
+        print(openai_response)
         # return NotFound
-        #
-        # company = openai_response.job_posting_company
-        # role = openai_response.job_posting_role
-        # bullets_to_redact = openai_response.non_relevant_bullet_points
 
-        company = "test_company"
-        role = "test_role"
-        bullets_to_redact = [
-            'Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React.',
-        ]
+        company = openai_response.job_posting_company
+        role = openai_response.job_posting_role
+        bullets_to_redact = openai_response.non_relevant_bullet_points
+
+        # company = "test_company"
+        # role = "test_role"
+        # bullets_to_redact = [
+        #     'Completed advanced coursework on Udemy.com to strengthen skills in Django, Python, and React.',
+        # ]
 
         name = f"{user.first_name}_{user.last_name}_{company}_{role}_Resume.pdf"
 
         tailored_resume_in_bytes = TailorPdf(template_resume, bullets_to_redact).tailored_resume_in_bytes
         print("made it out")
         # raise NotFound("dont create file")
-        print()
         tailored_resume = ContentFile(tailored_resume_in_bytes, name=name)
         print("made it past content file")
 
@@ -79,6 +78,11 @@ class TailoredResumeManager(models.Manager):
         # check that all fields are defined
         if any(value is None for value in model_fields.values()):
             raise ValidationError("Unable to generate Tailored Resume due to empty field")
+
+        existing_resume = TailoredResume.objects.filter(name=name).first
+        if existing_resume:
+            print("Resume already exists")
+            existing_resume.delete()
 
         tailored_resume = TailoredResume(**model_fields)
         tailored_resume.save()
