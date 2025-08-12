@@ -3,7 +3,10 @@ import json
 from django.contrib.auth.models import User
 from django.db import models
 from rest_framework.exceptions import NotFound, ValidationError
+import pymupdf4llm
+import docx
 
+from .exceptions import ParsingError
 from .mixins import TimestampMixin
 
 from .domain.openai_api import fetch_openai_response
@@ -34,6 +37,23 @@ class Resume(TimestampMixin, models.Model):
 
         super().save(*args, **kwargs)
 
+    def get_text(self):
+        resume_text = None
+        match self.file_type:
+            case "PDF":
+                resume_text = pymupdf4llm.to_markdown(self.file.path)
+            case "DOXC":
+                doc = docx.Document(self.file.path)
+                resume_text = '\n'.join(p.text for p in doc.paragraphs)
+            case "TXT":
+                with open(self.file.path, 'rb') as f:
+                    resume_text = f.read()
+
+        if not resume_text:
+            raise ParsingError("Unable to parse resume")
+
+        return resume_text
+
 
 class TailoredResumeManager(models.Manager):
     def create_from_params(self, user_id: int, resume_id: int, job_posting_url: str):
@@ -46,7 +66,7 @@ class TailoredResumeManager(models.Manager):
         role = openai_response.job_posting_role
 
         # TODO replace with name builder function
-        name = "Tailored_resume.pdf"
+        name = "Tailored_resume_3.pdf"
 
         # TODO replace with tailored resume generator function
         tailored_resume = template_resume.file
