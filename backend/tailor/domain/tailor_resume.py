@@ -19,25 +19,18 @@ class TailorPdf:
         self.tailored_resume_in_bytes = self.tailor_pdf_in_bytes(bullets_to_redact)
 
     def tailor_pdf_in_bytes(self, bullets_to_redact):
-        # TODO better to create the single page pdf and identify columns/header spacing when first uploaded
         try:
             template_pdf_unified = self.generate_unified_pdf()
-            self.page_break_rects = self.calculate_page_break_spacing(template_pdf_unified[0])
+
+            self.calculate_spacing(template_pdf_unified)
+
             redacted_pdf_unified = self.redact_bullets_from_pdf(bullets_to_redact, template_pdf_unified)
+
             tailored_pdf_unified = self.format_tailored_pdf_unified(redacted_pdf_unified)
 
             tailored_resume = self.split_unified_pdf(tailored_pdf_unified)
-
-            print("made it to split  into bytes")
             tailored_resume_in_bytes = tailored_resume.tobytes()
-            print("made it out of bytes")
-
-            # template_pdf_unified.close()
-            # tailored_pdf_unified.close()
-            # # tailored_resume.close()
-
             return tailored_resume_in_bytes
-        # TODO add error handling
         except Exception as e:
             print(f"error: {e}")
             return None
@@ -69,11 +62,8 @@ class TailorPdf:
         }
 
         # creates unified pdf with one page that is as long as there are pages in our template pdf
-        template_pdf_unified = pymupdf.open()
-        template_pdf_page_unified = template_pdf_unified.new_page(
-            width=page_width,
-            height=page_height * page_count
-        )
+        template_pdf_unified = self._generate_unified_pdf(*self.template_pdf_details.values())
+        template_pdf_page_unified = template_pdf_unified[0]
 
         # Maps template pages onto unified pdf
         for page in template_pdf:
@@ -133,56 +123,17 @@ class TailorPdf:
         template_page = template_pdf[0]
 
         for bullet in bullets_to_redact:
-            redacted_text_rect = self._combine_rects(template_page.search_for(bullet))
+            redacted_rect = self._combine_rects(template_page.search_for(bullet))
 
-            if not redacted_text_rect:
+            if not redacted_rect:
                 continue
 
-            rect_below_redacted_text = self._get_rect(list(redacted_text_rect), redacted_text_rect.height * -1)
-            text_below_redacted = template_page.get_textbox(rect_below_redacted_text)
-            text_rect_below_redacted = self._combine_rects(template_page.search_for(text_below_redacted))
+            redacted_rect = self.maybe_add_line_break(redacted_rect, template_page)
 
-            if text_rect_below_redacted and not text_rect_below_redacted.intersects(redacted_text_rect):
-                print(f"redacted rect before {redacted_text_rect}")
-                print(f"get text: {template_page.get_textbox(redacted_text_rect)}")
-                print("––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––")
-
-                print(f"distance from redacted rect floor to text_rect_below_redacted ceiling {text_rect_below_redacted.y0 - redacted_text_rect.y1 } ")
-
-                print("––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––")
-                redacted_text_rect = self._get_rect([
-                    redacted_text_rect.x0,
-                    redacted_text_rect.y0,
-                    redacted_text_rect.x1,
-                    text_rect_below_redacted.y0 - 0.000001
-                ])
-                print(f"redacted rect after {redacted_text_rect}")
-                # print(f"get text: {template_page.get_textbox(redacted_text_rect)}")
-
-            self.redacted_rects.append(redacted_text_rect)
-        self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
-
-
-
-        # calculated_redacted_rects = [
-        #     # Page.search_for() returns a list of all Rects where our bullet point is found,
-        #     # we then combine this list into one large Rect using our combine_rects method
-        #     self._combine_rects(template_page.search_for(bullet)) for bullet in bullets_to_redact
-        # ]
-        # filtered_redacted_rects = [rect for rect in calculated_redacted_rects if rect is not None]
-        # # TODO remove this once we get the OpenAI response figured out
-        # self.redacted_rects = sorted(filtered_redacted_rects, key=lambda rect: rect.y0)
-        #
-        # redacted_line_breaks = []
-        for redacted_rect in self.redacted_rects:
-            # adjacent_line_break = self.measure_bullet_line_break(redacted_rect, template_page)
-            # if adjacent_line_break:
-            #     redacted_line_breaks.append(adjacent_line_break)
-
+            self.redacted_rects.append(redacted_rect)
             template_page.add_redact_annot(redacted_rect)
 
-        # self.bullet_line_break = mode(redacted_line_breaks)[0]
-        # print(f"bullet_line_break is {self.bullet_line_break}")
+        self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
 
         result = template_page.apply_redactions()
         if not result:
@@ -192,143 +143,113 @@ class TailorPdf:
         template_pdf.reload_page(template_page)
         return template_pdf
 
+    def maybe_add_line_break(self, redacted_rect: pymupdf.Rect, template_page: pymupdf.Page):
+        """
+        This function checks if we can find any text below our redacted rect. If so, we will calculate
+        the empty space between them before extending the redacted rect to cover this whitespace. This
+        will allow us to account for it later when we are repositioning the text below it.
+
+        If we do not find any text below our redacted rect, we return the redacted rect as is
+        """
+
+        # use a negative offset to generate a rect of the same size underneath our redacted rect
+        offset_by_redacted_rect = (redacted_rect.height + 1) * -1
+        redacted_block = list(redacted_rect)
+        rect_underneath_redacted_rect = self._get_rect(redacted_block, offset_by_redacted_rect)
+
+        # search new rect for any text, rebuilding text rect to only encapsulate that text if found
+        text_underneath_redacted_rect = template_page.get_textbox(rect_underneath_redacted_rect)
+        text_rect = self._combine_rects(template_page.search_for(text_underneath_redacted_rect))
+
+        if text_rect and not text_rect.intersects(redacted_rect):
+            # extend our redacted rect to just above our text_rect
+            redacted_rect.include_point((redacted_rect.x1, text_rect.y0 - 0.000001))
+
+        return redacted_rect
+
     def format_tailored_pdf_unified(self, redacted_pdf: pymupdf.Document):
-        print("made it to tailoring pdf")
         redacted_page = redacted_pdf[0]
-        page_count, page_width, page_height = self.template_pdf_details.values()
 
-
-        tailored_pdf_unified = pymupdf.open()
-        tailored_pdf_unified.new_page(
-            width=page_width,
-            height=page_height * page_count
-        )
-
+        tailored_pdf_unified = self._generate_unified_pdf(*self.template_pdf_details.values())
         tailored_page_unified = tailored_pdf_unified[0]
 
-        redacted_index = 0
+        redacted_rect_index = 0
         total_offset_by = 0
         for text_block in redacted_page.get_text("blocks"):
-            text_block_rect = self._get_rect(text_block)
+            text_rect = self._get_rect(text_block)
 
-            redacted_offset, redacted_index = self.calculate_rect_offset(redacted_index, text_block_rect)
+            redacted_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
             total_offset_by += redacted_offset
 
-            repositioned_rect = self.calculate_updated_rect(text_block, total_offset_by)
-            interim_pdf_unified = self.isolate_repositioned_rect(repositioned_rect, redacted_pdf, text_block_rect)
+            # TODO account for self.page_break_rects
+            repositioned_text_rect = self._get_rect(text_block, total_offset_by)
+            interim_pdf_unified = self.isolate_repositioned_rect(repositioned_text_rect, redacted_pdf, text_rect)
 
             tailored_page_unified.show_pdf_page(
-                repositioned_rect,
+                repositioned_text_rect,
                 interim_pdf_unified,
-                clip=repositioned_rect
+                clip=repositioned_text_rect
             )
 
             interim_pdf_unified.close()
 
         return tailored_pdf_unified
 
-    def calculate_rect_offset(self, redacted_index: int, text_block_rect: pymupdf.Rect):
-
+    def calculate_text_rect_offset(self, redacted_rect_index: int, text_block_rect: pymupdf.Rect):
+        """
+        This function is meant to use our self.page_break_rects to reposition the rect passed in
+        if it falls into one of the rects that capture our footer + header spacing. If it does
+        intersect, then we will split/reposition the text_block so it accommodates the page break spacing
+        """
         # handle when nothing to redact or we've reached the end of our list
-        if not self.redacted_rects or redacted_index >= len(self.redacted_rects):
-            return 0, redacted_index
+        if not self.redacted_rects or redacted_rect_index >= len(self.redacted_rects):
+            return 0, redacted_rect_index
 
         # if the bottom of the text block rect is above the current redacted rect
-        if text_block_rect.y1 <= self.redacted_rects[redacted_index].y0:
-            return 0, redacted_index
+        if text_block_rect.y1 <= self.redacted_rects[redacted_rect_index].y0:
+            return 0, redacted_rect_index
 
-        # continue looping until redacted_rects[redacted_index] rect is below our text_block
         redacted_offset = 0
-        updated_index = redacted_index
-        while text_block_rect.y0 > self.redacted_rects[updated_index].y1:
+        current_redacted_rect_index = redacted_rect_index
+        # we add the y distance between the top and bottom of our redacted rect before progressing
+        # to the next one, repeating as long as our current text block is below a redacted rect
+        while text_block_rect.y0 > self.redacted_rects[current_redacted_rect_index].y1:
+            redacted_offset += self.redacted_rects[current_redacted_rect_index].height
+            current_redacted_rect_index += 1
 
-            # # y distance between the last line of the redacted text and the first line of the non-redacted text
-            # line_break_offset = text_block_rect.y0 - self.redacted_rects[updated_index].y1
-
-            # y distance between top of first line of redacted text and bottom of last line of redacted text
-            # print(f"line break offset is {self.bullet_line_break}")
-            # redacted_offset += self.redacted_rects[updated_index].height + self.bullet_line_break
-            redacted_offset += self.redacted_rects[updated_index].height
-            updated_index += 1
-
-            # terminates if we get to the end of our list
-            if updated_index == len(self.redacted_rects):
+            # terminates early if we get to the end of our list
+            if current_redacted_rect_index == len(self.redacted_rects):
                 break
 
-        # print(f"textblock: {text_block}")
-        #
-        #         print(f" offset is : {total_offset_by}")
-        #
-        #         print(f"template rect is : {text_block_rect.y0}")
-        #         print(f"redacted rect is : {redacted_rect.y1}")
-        # print("made it to repositing")
-        #
-        # print("redacted info")
-        # print(redacted_index)
-        # print(len(self.redacted_rects))
-        #
-        # print("page info")
-        # print(tailored_page_unified.rect)
-        # print("block info")
-        # print(text_block)
-        # print(offset_by)
-        # print("made it out of repositing")
-        # print(repositioned_rect)
-
-        print(f"redacted offset is {redacted_offset}")
-        return redacted_offset, updated_index
+        return redacted_offset, current_redacted_rect_index
 
     def calculate_updated_rect(self, text_block, offset_by):
+        """
+        This function is meant to use our self.page_break_rects to reposition the rect passed in
+        if it falls into one of the rects that capture our footer + header spacing. If it does
+        intersect, then we will split/reposition the text_block so it accommodates the page break spacing
+        """
         updated_rect = self._get_rect(text_block, offset_by)
 
         # check if updated rectangle intersects with a page break
         for page_break_rect in self.page_break_rects:
-            # print(page_break_rect)
             if not page_break_rect.intersects(updated_rect):
                 continue
 
-            print(page_break_rect)
-            print("rect intersects")
-            print(updated_rect)
             # TODO break up only part of text block that overlaps
             updated_offset = offset_by + page_break_rect.height
             updated_rect = self._get_rect(text_block, updated_offset)
-            print("new rect is")
-            print(updated_rect)
             break
 
         return updated_rect
 
     def extend_borders_to_width(self, bullet_rect):
-        # TODO accommodate for multiple columns
+        # TODO account for multiple columns
         left_of_page, right_of_page = 0, self.template_pdf_details["width"]
         bullet_rect.x0 = left_of_page
         bullet_rect.x1 = right_of_page
 
         return bullet_rect
-
-    def measure_bullet_line_break(self, redacted_rect, template_page):
-        redacted_height = redacted_rect.height
-
-        rect_above_redacted = self._get_rect(list(redacted_rect), redacted_height+2)
-        text_above_redacted = template_page.get_textbox(rect_above_redacted)
-        text_rect_above_redacted = self._combine_rects(template_page.search_for(text_above_redacted))
-        if text_rect_above_redacted and not text_rect_above_redacted.intersects(redacted_rect):
-            line_break_above_redacted = redacted_rect.y0 - text_rect_above_redacted.y1
-        else:
-            line_break_above_redacted = float('inf')
-
-        rect_below_redacted = self._get_rect(list(redacted_rect), redacted_height * -1)
-        text_below_redacted = template_page.get_textbox(rect_below_redacted)
-        text_rect_below_redacted = self._combine_rects(template_page.search_for(text_below_redacted))
-        if text_rect_below_redacted and not text_rect_below_redacted.intersects(redacted_rect):
-            line_break_below_redacted = text_rect_below_redacted.y0 - redacted_rect.y1
-        else:
-            line_break_below_redacted = float('inf')
-
-        smallest_line_break = min(line_break_above_redacted, line_break_below_redacted)
-
-        return 0 if smallest_line_break == float('inf') else smallest_line_break
 
     def isolate_repositioned_rect(self, repositioned_rect, redacted_pdf, template_rect):
         """
@@ -338,13 +259,7 @@ class TailorPdf:
         we need to annotate all the space around our repositioned text block and redact it to remove all extraneous
         text/links. We then return the temporary PDF page with only the text block.
         """
-        page_count, page_width, page_height = self.template_pdf_details.values()
-
-        interim_pdf_unified = pymupdf.open()
-        interim_pdf_unified.new_page(
-            width=page_width,
-            height=page_height * page_count
-        )
+        interim_pdf_unified = self._generate_unified_pdf(*self.template_pdf_details.values())
         interim_page_unified = interim_pdf_unified[0]
 
         interim_page_unified.show_pdf_page(
@@ -353,8 +268,9 @@ class TailorPdf:
             clip=template_rect
         )
 
-        # redact everything else
         page_rect = interim_page_unified.rect
+
+        # redact everything else by creating four Rects around our rect and redacting everything around it
         rect_above_repositioned_rect = self._get_rect([
             page_rect.x0,  # Leftmost part of Page
             page_rect.y0,  # Top of Page
@@ -395,6 +311,11 @@ class TailorPdf:
         interim_pdf_unified.reload_page(interim_page_unified)
         return interim_pdf_unified
 
+    def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
+        # TODO column spacing https://github.com/pymupdf/PyMuPDF/discussions/2259#discussioncomment-6669190
+
+        self.page_break_rects = self.calculate_page_break_spacing(template_pdf_unified[0])
+
     def calculate_page_break_spacing(self, template_page_unified: pymupdf.Page):
         """
         returns a list of page_break_rects that span from the bottom of text on a previous page (top of footer)
@@ -405,7 +326,7 @@ class TailorPdf:
         # (x0, y0, x1, y1, "lines in the block", block_no, block_type)
 
         page_count, page_width, page_height = self.template_pdf_details.values()
-        page_break_heights = [page_height * page_no for page_no in range(1, page_count + 1)]
+        page_break_heights = [page_height * i for i in range(1, page_count + 1)]
         page_break_index = 0
         page_break_rects = []
 
@@ -418,9 +339,10 @@ class TailorPdf:
                 previous_text_rect = text_rect
                 continue
 
+            # when we encounter a text block that is below a page break
             if text_rect.y0 > page_break_heights[page_break_index]:
-                # Create a Rect that spans the distance between the previous text on the last page and the first
-                # text on the current page
+                # We want to calculate the distance between the last text block on the previous page
+                # and the first text block on the current page and create a Rect that matches it
                 page_break_x0 = 0
                 page_break_y0 = previous_text_rect.y1
                 page_break_x1 = page_width
@@ -467,3 +389,9 @@ class TailorPdf:
         if not rect.is_valid or rect.is_empty:
             raise KeyError("generated_rect is invalid")
         return rect
+
+    @staticmethod
+    def _generate_unified_pdf(page_count, page_width, page_height):
+        new_pdf = pymupdf.open()
+        new_pdf.new_page(width=page_width, height=page_height * page_count)
+        return new_pdf
