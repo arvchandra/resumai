@@ -1,13 +1,11 @@
 import { useState } from "react";
 
 import { useResumesContext } from "../contexts/ResumesContext";
-import { useAuth } from "../contexts/AuthContext";
-import useFetchWithAuth from "./useFetchWithAuth";
+import { useResumeApi } from "../api/resumeApi.ts";
 
 export default function useUploadResumeFile() {
   const { tempUploadedResumeFile } = useResumesContext();
-  const { userInfo } = useAuth();
-  const fetchWithAuth = useFetchWithAuth();
+  const { uploadUserResume } = useResumeApi();
 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
@@ -22,14 +20,11 @@ export default function useUploadResumeFile() {
     formData.append("file", tempUploadedResumeFile);
 
     try {
-      const result = await fetchWithAuth(`http://localhost:8000/tailor/users/${userInfo!.id}/resumes/upload/`, {
-        method: "POST",
-        body: formData
-      });
+      const response = await uploadUserResume(formData);
 
       setIsUploading(false);
 
-      const data = await result.json();
+      const data = await response.json();
       return data["uploadedResume"];
     } catch (error) {
       if (error instanceof Error) {

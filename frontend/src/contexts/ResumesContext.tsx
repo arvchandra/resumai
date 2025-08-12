@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useReducer } from "react";
 
-import useFetchWithAuth from "../hooks/useFetchWithAuth";
+import { useResumeApi } from "../api/resumeApi.ts";
 
 import type Resume from "../interfaces/Resume";
 
@@ -13,7 +13,7 @@ interface ResumesState {
 }
 
 interface ResumesMethods {
-  fetchResumes: (userId: number) => Promise<void>;
+  fetchResumes: () => Promise<void>;
   addUploadedResume: (resume: Resume) => void;
   setSelectedResume: (resume: Resume) => void;
   setTempUploadedResumeFile: (file: File | null) => void;
@@ -101,7 +101,7 @@ function resumesReducer(state: ResumesState, action: ResumesAction) {
 
 export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [resumesState, resumesDispatch] = useReducer(resumesReducer, resumesInitialState);
-  const fetchWithAuth = useFetchWithAuth();
+  const { getUserResumes } = useResumeApi();
 
   const handleSetSelectedResume = (resume: Resume) => {
     resumesDispatch({
@@ -125,13 +125,13 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
   };
 
   // Async resumes fetching function
-  const fetchResumes = useCallback(async (userId: number) => {
+  const fetchResumes = async() => {
     resumesDispatch({ type: "FETCH_START" });
     await new Promise((resolve) => setTimeout(resolve, 1000));
     try {
-      const response = await fetchWithAuth(`http://localhost:8000/tailor/users/${userId}/resumes/`);
+      const response = await getUserResumes();
       const data: Resume[] = await response.json();
-      resumesDispatch({type: "SET_RESUMES", payload: data});
+      resumesDispatch({ type: "SET_RESUMES", payload: data });
 
       // Set default resume as selected resume only if no
       // resume had previously been selected (i.e. initial load)
@@ -151,7 +151,7 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
     }
 
     resumesDispatch({ type: "FETCH_STOP" });
-  }, []);
+  };
 
   const ctxValue = {
     resumes: resumesState.resumes,
