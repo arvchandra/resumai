@@ -1,6 +1,4 @@
-import json
 from datetime import datetime
-from io import BytesIO
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.files.base import ContentFile
