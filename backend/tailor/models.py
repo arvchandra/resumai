@@ -66,7 +66,7 @@ class TailoredResumeManager(models.Manager):
         role = openai_response.job_posting_role
 
         # TODO replace with name builder function
-        name = "Tailored_resume_3.pdf"
+        name = "Tailored_resume.pdf"
 
         # TODO replace with tailored resume generator function
         tailored_resume = template_resume.file
