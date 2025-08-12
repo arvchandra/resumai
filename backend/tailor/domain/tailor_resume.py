@@ -163,11 +163,37 @@ class TailorPdf:
 
         if text_rect and not text_rect.intersects(redacted_rect):
             # extend our redacted rect to just above our text_rect
-            redacted_rect.include_point((redacted_rect.x1, text_rect.y0 - 0.000001))
+            redacted_rect = self._get_rect([
+                redacted_rect.x0,
+                redacted_rect.y0,
+                redacted_rect.x1,
+                text_rect.y0 - 0.000001
+            ])
 
         return redacted_rect
 
     def format_tailored_pdf_unified(self, redacted_pdf: pymupdf.Document):
+        """
+        This function repositions the remaining text on our redacted pdf onto a new pdf using the location of our
+        redacted rects to increase add how much we are moving the repositioned text up by
+
+        Example:
+        Template PDF
+        - A
+        - B
+        - C
+        - D
+
+        Redacted PDF
+        - A
+             <- B has been redacted
+             <- C has been redacted
+        - D  <- needs to be repositioned on the new pdf by the height of B + C
+
+        Tailored PDF
+        - A
+        - D
+        """
         redacted_page = redacted_pdf[0]
 
         tailored_pdf_unified = self._generate_unified_pdf(*self.template_pdf_details.values())
@@ -282,22 +308,22 @@ class TailorPdf:
             page_rect.x0,  # Leftmost part of Page
             repositioned_rect.y0,  # Top of repositioned rect
             repositioned_rect.x0,  # Leftmost part of repositioned rect
-            repositioned_rect.y1]  # Bottom of repositioned rect
-        )
+            repositioned_rect.y1  # Bottom of repositioned rect
+        ])
 
         rect_right_of_repositioned_rect = self._get_rect([
             repositioned_rect.x1,  # Rightmost part of repositioned rect
             repositioned_rect.y0,  # Top of repositioned rect
             page_rect.x1,  # Rightmost part of Page
-            repositioned_rect.y1]  # Bottom of repositioned rect
-        )
+            repositioned_rect.y1  # Bottom of repositioned rect
+        ])
 
         rect_below_repositioned_rect = self._get_rect([
             page_rect.x0,  # Leftmost part of Page
             repositioned_rect.y1,  # Bottom of repositioned rect
             page_rect.x1,  # Rightmost part of Page
-            page_rect.y1]  # Bottom of page
-        )
+            page_rect.y1  # Bottom of page
+        ])
 
         for redact_rect in (
                 rect_above_repositioned_rect,
