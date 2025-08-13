@@ -3,7 +3,6 @@ from openai import OpenAI
 from pydantic import BaseModel
 from django.conf import settings
 
-from .document import DocumentFactory
 from .job_posting import LinkedInPosting
 from tailor.exceptions import ParsingError
 
@@ -16,7 +15,7 @@ class ParsedResumeAndJobDetails(BaseModel):
 
 
 def fetch_openai_response(resume, job_posting_url: str):
-    resume_text = fetch_resume_text(resume)
+    resume_text = resume.get_text()
     job_posting_text = fetch_job_posting_text(job_posting_url)
 
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -39,13 +38,6 @@ def fetch_openai_response(resume, job_posting_url: str):
         raise ParsingError("Unable to fetch response text from OpenAI")
 
     return response.output_parsed
-
-
-def fetch_resume_text(resume):
-    resume_document = DocumentFactory.create(resume.file)
-    resume_text = resume_document.get_text()
-
-    return resume_text
 
 
 def fetch_job_posting_text(job_posting_url: str):
