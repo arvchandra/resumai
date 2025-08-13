@@ -42,7 +42,7 @@ class Resume(TimestampMixin, models.Model):
         match self.file_type:
             case "PDF":
                 resume_text = pymupdf4llm.to_markdown(self.file.path)
-            case "DOXC":
+            case "DOCX":
                 doc = docx.Document(self.file.path)
                 resume_text = '\n'.join(p.text for p in doc.paragraphs)
             case "TXT":
