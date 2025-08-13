@@ -22,7 +22,7 @@ def fetch_openai_response(resume, job_posting_url: str):
 
     prompt = {
         "id": "pmpt_686808032cc88193914ee3c0726c26fc06b6bcce04c3ec55",
-        "version": "9",
+        "version": "14",
         "variables": {
             "job_posting": job_posting_text,
             "resume": resume_text
