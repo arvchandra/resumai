@@ -3,8 +3,11 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.files.base import ContentFile
 from rest_framework.exceptions import NotFound, ValidationError
+import pymupdf4llm
+import docx
 
 from .domain.tailor_resume import TailorPdf
+from .exceptions import ParsingError
 from .mixins import TimestampMixin
 
 from .domain.openai_api import fetch_openai_response
@@ -34,6 +37,23 @@ class Resume(TimestampMixin, models.Model):
                 Resume.objects.filter(user=self.user, is_default=True).exclude(id=self.id).update(is_default=False)
 
         super().save(*args, **kwargs)
+
+    def get_text(self):
+        resume_text = None
+        match self.file_type:
+            case "PDF":
+                resume_text = pymupdf4llm.to_markdown(self.file.path)
+            case "DOCX":
+                doc = docx.Document(self.file.path)
+                resume_text = '\n'.join(p.text for p in doc.paragraphs)
+            case "TXT":
+                with open(self.file.path, 'rb') as f:
+                    resume_text = f.read()
+
+        if not resume_text:
+            raise ParsingError("Unable to parse resume")
+
+        return resume_text
 
 
 class TailoredResumeManager(models.Manager):
