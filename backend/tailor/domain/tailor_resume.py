@@ -245,7 +245,6 @@ class TailorPdf:
         This means we need to keep stepping along our redacted_rect list until our text_block_rect is no longer
         below a redacted_rect or we have run through all of our redacted_rects
         """
-        # handle when nothing to redact or we've reached the end of our list
         if not self.redacted_rects or redacted_rect_index >= len(self.redacted_rects):
             return 0, redacted_rect_index
 
