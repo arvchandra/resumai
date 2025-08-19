@@ -1,0 +1,57 @@
+import shutil
+from pathlib import Path
+import pytest
+from django.conf import settings
+from django.contrib.auth.models import User
+from tailor.models import Resume, TailoredResume
+
+import os
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
+@pytest.fixture(autouse=True)
+def media_root_override(settings):
+    settings.MEDIA_ROOT = Path(settings.BASE_DIR) / "tailor/tests/test_media_root/uploads"
+
+    yield
+
+    tailored_resumes_path = f"{settings.MEDIA_ROOT}/tailored_resumes"
+    if os.path.exists(tailored_resumes_path):
+        shutil.rmtree(tailored_resumes_path)
+
+
+@pytest.fixture
+def user_data(db) -> User:
+    return User.objects.create_user("Test_User")
+
+
+@pytest.fixture
+def resume_data( request, db, user_data):
+    filename = request.param
+    filetype = filename.split('.')[-1].upper()
+    filepath = f"resumes/{filename}"
+    return {
+        "name": "Demo_Resume",
+        "file": filepath,
+        "file_type": filetype,
+        "user": user_data,
+    }
+
+
+class TestResume:
+
+    @pytest.mark.parametrize("resume_data", [
+        "Arvind_Chandra_-_Resume_-_2025.pdf",
+        "Arvind Chandra - Resume -2025.docx",
+        "Max_Ingraham_Rakatansky_Work_Resume-11.pdf",
+    ], indirect=True)
+    def test_create_resume(self, db, resume_data):
+        resume = Resume(**resume_data)
+        assert resume.name == "Demo_Resume"
+        assert resume.file_type == resume.file.name.split('.')[-1].upper()
+        assert resume.get_text() != ""
+
+
+if __name__ == '__main__':
+    pytest.main()

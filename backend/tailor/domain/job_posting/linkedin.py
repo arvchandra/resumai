@@ -1,11 +1,13 @@
 from urllib.parse import urlparse, parse_qs, urljoin
 from bs4 import BeautifulSoup
 import requests
+import re
 from tailor.exceptions import ParsingError
 
 from .base import JobPosting
 
 JOB_POSTING_PATH = "https://www.linkedin.com/jobs/view"
+JOB_POSTING_REGEX = '^https://www.linkedin.com/jobs/view/[0-9]{10}'
 JOB_ID_QUERY_PARAM = "currentJobId"
 
 
@@ -15,22 +17,22 @@ class LinkedInPosting(JobPosting):
             parsed_url = urlparse(url)
 
             # When URL is of the format https://www.linkedin.com/jobs/view/4259447405/?alternateChannel=search
-            full_path = urljoin(url, parsed_url.path)
-            if JOB_POSTING_PATH in full_path:
-                return full_path
+            if re.search(JOB_POSTING_REGEX, url):
+                reformatted_url = urljoin(url, parsed_url.path)
+                return reformatted_url
 
             # When URL is of the format https://www.linkedin.com/jobs/collections/recommended/?currentJobId=4259433658
             query_params = parse_qs(parsed_url.query)
             job_ids = query_params.get(JOB_ID_QUERY_PARAM)
-            if not job_ids:
-                raise ParsingError("Unable to parse job posting")
+            if job_ids:
+                reformatted_url = f"{JOB_POSTING_PATH}/{job_ids[0]}/"
+                return reformatted_url
 
-            reformatted_url = f"{JOB_POSTING_PATH}/{job_ids[0]}"
-
-            return reformatted_url
-        except KeyError as e:
+            # When the URL is anything else
+            raise ParsingError("Unable to parse job posting")
+        except (AttributeError, TypeError) as e:
             # TODO log error
-            pass
+            raise e
 
     def get_text(self):
         # Will attempt to try without headless browsers since it's possible the problem only
