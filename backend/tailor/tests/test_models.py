@@ -38,9 +38,9 @@ def resume_data( request, db, user_data):
 class TestResume:
 
     @pytest.mark.parametrize("resume_data", [
-        "Arvind_Chandra_-_Resume_-_2025.pdf",
-        "Arvind Chandra - Resume -2025.docx",
-        "Max_Ingraham_Rakatansky_Work_Resume-11.pdf",
+        "test_arvind_resume.pdf",
+        "test_arvind_resume.docx",
+        "test_max_resume.pdf",
     ], indirect=True)
     def test_create_resume(self, db, resume_data):
         resume = Resume(**resume_data)
