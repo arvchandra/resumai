@@ -25,11 +25,12 @@ ENV/
 
 # Files
 uploads/*
+!tailor/tests/test_media_root/uploads/*
+
 *.pdf
 *.docx
 
 # Test File exceptions
-!/tailor/tests/test_media_root/uploads/
-!/tailor/tests/test_media_root/uploads/*.pdf
-!/tailor/tests/test_media_root/uploads/*.docx
+!tailor/tests/test_media_root/uploads/*.pdf
+!tailor/tests/test_media_root/uploads/*.docx
 
