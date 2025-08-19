@@ -5,10 +5,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from tailor.models import Resume, TailoredResume
 
-import os
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-
 
 @pytest.fixture(autouse=True)
 def media_root_override(settings):
@@ -16,8 +12,8 @@ def media_root_override(settings):
 
     yield
 
-    tailored_resumes_path = f"{settings.MEDIA_ROOT}/tailored_resumes"
-    if os.path.exists(tailored_resumes_path):
+    tailored_resumes_path = Path(settings.MEDIA_ROOT) / "tailored_resumes"
+    if tailored_resumes_path.exists():
         shutil.rmtree(tailored_resumes_path)
 
 
