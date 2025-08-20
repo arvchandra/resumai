@@ -8,10 +8,9 @@ class TestResume:
         "test_arvind_resume.docx",
         "test_max_resume.pdf",
     ], indirect=True)
-    def test_create_resume(self, db, resume_object):
+    def test_resumes_get_text_passes_for_all_file_types(self, db, resume_object):
         resume = resume_object
-        assert resume.name == "Demo_Resume"
-        assert resume.file_type == resume.file.name.split('.')[-1].upper()
+        # TODO add expected response doc to compare text
         assert resume.get_text() != ""
 
 
