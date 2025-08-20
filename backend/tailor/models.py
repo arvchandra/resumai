@@ -69,7 +69,8 @@ class TailoredResumeManager(models.Manager):
 
         name = f"{user.first_name}_{user.last_name}_{company}_{role}_{datetime.now()}_Resume.pdf"
 
-        tailored_resume_in_bytes = TailorPdf(template_resume, bullets_to_redact).tailored_resume_in_bytes
+        tailored_resume = TailorPdf(template_resume, bullets_to_redact)
+        tailored_resume_in_bytes = tailored_resume.tailor_pdf_in_bytes()
         tailored_resume = ContentFile(tailored_resume_in_bytes, name=name)
 
         model_fields = {

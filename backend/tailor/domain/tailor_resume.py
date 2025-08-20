@@ -13,18 +13,18 @@ class TailorPdf:
             "width": 0,
             "height": 0
         }
+        self.bullets_to_redact = bullets_to_redact
         self.bullet_line_break = 0
         self.redacted_rects = []
         self.page_break_rects = []
-        self.tailored_resume_in_bytes = self.tailor_pdf_in_bytes(bullets_to_redact)
 
-    def tailor_pdf_in_bytes(self, bullets_to_redact):
+    def tailor_pdf_in_bytes(self):
         try:
             template_pdf_unified = self.generate_unified_pdf()
 
             self.calculate_spacing(template_pdf_unified)
 
-            redacted_pdf_unified = self.redact_bullets_from_pdf(bullets_to_redact, template_pdf_unified)
+            redacted_pdf_unified = self.redact_bullets_from_pdf(self.bullets_to_redact, template_pdf_unified)
 
             tailored_pdf_unified = self.format_tailored_pdf_unified(redacted_pdf_unified)
 
