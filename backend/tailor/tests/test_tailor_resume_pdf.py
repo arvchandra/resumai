@@ -27,9 +27,9 @@ def bullets_to_redact():
     ]
 
 @pytest.fixture
-def tailor_pdf(request, bullets_to_redact):
+def tailor_pdf(db, request, bullets_to_redact):
     filename = request.param
-    template_resume = Resume.objects.get(name=filename)
+    template_resume = Resume.objects.get(id=4)
     return TailorPdf(template_resume, bullets_to_redact)
 
 
