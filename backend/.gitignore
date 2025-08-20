@@ -25,6 +25,5 @@ ENV/
 
 # Files
 uploads/*
-!tailor/tests/test_media_root/uploads/*
 
 
