@@ -45,7 +45,4 @@ def fetch_job_posting_text(job_posting_url: str):
     if "linkedin.com" not in job_posting_url:
         raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
 
-    linkedin_job_posting = LinkedInPosting(job_posting_url)
-    job_posting_text = linkedin_job_posting.get_text()
-
-    return job_posting_text
+    return LinkedInPosting(job_posting_url).get_text()
