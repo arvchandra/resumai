@@ -91,10 +91,7 @@ class TailoredResumeManager(models.Manager):
 
         return tailored_resume
 
-
-
-
-    def _fetch_resume(self, resume_id, user_id):
+    def fetch_resume(self, resume_id, user_id):
         try:
             template_resume = Resume.objects.get(id=resume_id, user_id=user_id)
             return template_resume
