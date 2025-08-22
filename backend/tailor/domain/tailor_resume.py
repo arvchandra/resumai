@@ -137,7 +137,8 @@ class TailorPdf:
         template_page = template_pdf[0]
 
         for bullet in bullets_to_redact:
-            redacted_rect = self._combine_rects(template_page.search_for(bullet))
+            rects_containing_bullet = template_page.search_for(bullet)
+            redacted_rect = self._combine_rects(rects_containing_bullet)
 
             if not redacted_rect:
                 continue
@@ -174,7 +175,9 @@ class TailorPdf:
 
         # search new rect for any text, rebuilding text rect to only encapsulate that text if found
         text_underneath_redacted_rect = template_page.get_textbox(rect_underneath_redacted_rect)
-        text_rect = self._combine_rects(template_page.search_for(text_underneath_redacted_rect))
+        rects_containing_text_underneath = template_page.search_for(text_underneath_redacted_rect)
+
+        text_rect = self._combine_rects(rects_containing_text_underneath)
 
         if text_rect and not text_rect.intersects(redacted_rect):
             # extend our redacted rect to just above our text_rect
@@ -390,7 +393,7 @@ class TailorPdf:
 
         return bullet_rect
 
-    def _combine_rects(self, rect_list=[]):
+    def _combine_rects(self, rect_list):
         if not rect_list:
             return None
 
