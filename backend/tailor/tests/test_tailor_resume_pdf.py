@@ -27,18 +27,6 @@ def bullets_to_redact():
     ]
 
 
-@pytest.fixture
-def tailor_pdf(db, resume_object, bullets_to_redact):
-    return TailorPdf(resume_object, bullets_to_redact)
-
-
-def fetch_text(resume_doc: pymupdf.Document):
-    text = ""
-    for page in resume_doc:
-        text += page.get_text()
-    return text
-
-
 class TestTailorPdf:
     class TestGenerateUnifiedPdf:
 
@@ -101,3 +89,10 @@ class TestTailorPdf:
 
     class TestSplitPdf:
         pass
+
+
+def fetch_text(resume_doc: pymupdf.Document):
+    text = ""
+    for page in resume_doc:
+        text += page.get_text()
+    return text

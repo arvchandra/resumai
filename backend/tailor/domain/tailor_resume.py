@@ -9,9 +9,6 @@ class TailorPdf:
             "height": 0
         }
         self.bullets_to_redact = bullets_to_redact
-        self.bullet_line_break = 0
-        self.redacted_rects = []
-        self.page_break_rects = []
 
     def tailor_pdf_in_bytes(self):
         try:
@@ -60,7 +57,7 @@ class TailorPdf:
         template_pdf_unified = self._generate_unified_pdf()
         template_pdf_page_unified = template_pdf_unified[0]
 
-        # Maps template pages onto unified pdf
+        # Maps pages from template pdf onto unified pdf
         for page in template_pdf:
             # determines how many pages we've already added/need to account for
             page_offset_height = page_height * page.number
