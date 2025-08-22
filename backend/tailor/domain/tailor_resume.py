@@ -1,9 +1,4 @@
 import pymupdf
-from scipy.stats import mode
-
-def tailor_resume(response, file_type ='pdf'):
-    pass
-
 
 class TailorPdf:
     def __init__(self, template_resume, bullets_to_redact):
@@ -41,7 +36,7 @@ class TailorPdf:
         to generate a new PDF with only one page that is equal in length to the number of pages in
         the template PDF. This will make it easier to reformat the entire PDF after deleting unnecessary bullet points
         """
-        if not (self.template_resume or self.template_resume.file):
+        if not self.template_resume or not self.template_resume.file:
             raise FileNotFoundError("Unable to access template resume")
 
         template_file_path = self.template_resume.file.path

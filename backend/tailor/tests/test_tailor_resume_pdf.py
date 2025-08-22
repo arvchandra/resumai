@@ -2,7 +2,7 @@ import pymupdf
 import pytest
 
 from tailor.domain.tailor_resume import TailorPdf
-from tailor.models import Resume
+
 
 @pytest.fixture
 def bullets_to_redact():
@@ -26,42 +26,71 @@ def bullets_to_redact():
         'Received a letter of commendation from the client for outstanding performance in understanding the business requirements, delivering high-quality and secure application features, and meeting critical government deadlines.',
     ]
 
+
 @pytest.fixture
-def tailor_pdf(db, request, bullets_to_redact):
-    filename = request.param
-    template_resume = Resume.objects.get(id=4)
-    return TailorPdf(template_resume, bullets_to_redact)
+def tailor_pdf(db, resume_object, bullets_to_redact):
+    return TailorPdf(resume_object, bullets_to_redact)
 
 
-def fetch_text(resume: Resume):
-    filepath = resume.file.path
-    pdf = pymupdf.open(filepath)
+def fetch_text(resume_doc: pymupdf.Document):
     text = ""
-    for page in pdf:
+    for page in resume_doc:
         text += page.get_text()
-
     return text
+
 
 class TestTailorPdf:
     class TestGenerateUnifiedPdf:
 
-        # @pytest.mark.parametrize("template_resume", [
-        #     "Arvind Chandra - Resume - 2025.pdf",
-        # ], indirect=True)
-        # def test_generates_unified_pdf_with_correct_dimensions(self, tailor_pdf: TailorPdf):
-        #     template_resume = tailor_pdf.template_resume.file
-        #     unified_resume = tailor_pdf.generate_unified_pdf()
-        #     assert tailor_pdf.template_pdf_details
-
-
-        @pytest.mark.parametrize("tailor_pdf", [
-            "Arvind Chandra - Resume - 2025.pdf",
+        @pytest.mark.parametrize("resume_object", [
+            "test_arvind_resume.pdf",
+            "test_max_resume.pdf"
         ], indirect=True)
-        def test_generates_unified_pdf_with_correct_text(self, tailor_pdf: TailorPdf):
-            template_resume = tailor_pdf.template_resume.file
-            unified_resume = tailor_pdf.generate_unified_pdf()
-            assert fetch_text(template_resume) == fetch_text(unified_resume)
+        def test_generates_unified_pdf_with_correct_text(self, resume_object, bullets_to_redact):
+            template_resume_doc = pymupdf.open(resume_object.file.path)
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            assert fetch_text(template_resume_doc) == fetch_text(unified_resume_doc)
 
+        @pytest.mark.parametrize("resume_object", [
+            "test_arvind_resume.pdf",
+            "test_max_resume.pdf"
+        ], indirect=True)
+        def test_generates_unified_pdf_with_correct_dimensions(self, resume_object, bullets_to_redact):
+            template_resume_doc = pymupdf.open(resume_object.file.path)
+            template_resume_details = {
+                "pages": template_resume_doc.page_count,
+                "page_width": template_resume_doc[0].rect.width,
+                "page_height": template_resume_doc[0].rect.height
+            }
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            unified_resume_rect = unified_resume_doc[0].bound()
+            assert unified_resume_rect.width == template_resume_details["page_width"]
+            assert unified_resume_rect.height == template_resume_details["pages"] * template_resume_details["page_height"]
+
+        @pytest.mark.parametrize("resume_object", [
+            "test_arvind_resume.pdf",
+            "test_max_resume.pdf"
+        ], indirect=True)
+        def test_when_template_resume_is_none(self, resume_object, bullets_to_redact):
+            template_resume_doc = pymupdf.open(resume_object.file.path)
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            tailor_pdf.template_resume = None
+            with pytest.raises(FileNotFoundError):
+                tailor_pdf.generate_unified_pdf()
+
+        @pytest.mark.parametrize("resume_object", [
+            "test_arvind_resume.pdf",
+            "test_max_resume.pdf"
+        ], indirect=True)
+        def test_when_template_resume_has_no_file(self, resume_object, bullets_to_redact):
+            template_resume_doc = pymupdf.open(resume_object.file.path)
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            resume_object.file = None
+            tailor_pdf.template_resume = resume_object
+            with pytest.raises(FileNotFoundError):
+                tailor_pdf.generate_unified_pdf()
 
     class TestCalculateSpacing:
         pass
