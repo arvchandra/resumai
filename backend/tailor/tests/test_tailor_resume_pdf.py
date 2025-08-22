@@ -74,7 +74,6 @@ class TestTailorPdf:
             "test_max_resume.pdf"
         ], indirect=True)
         def test_when_template_resume_is_none(self, resume_object, bullets_to_redact):
-            template_resume_doc = pymupdf.open(resume_object.file.path)
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             tailor_pdf.template_resume = None
             with pytest.raises(FileNotFoundError):
@@ -85,7 +84,6 @@ class TestTailorPdf:
             "test_max_resume.pdf"
         ], indirect=True)
         def test_when_template_resume_has_no_file(self, resume_object, bullets_to_redact):
-            template_resume_doc = pymupdf.open(resume_object.file.path)
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             resume_object.file = None
             tailor_pdf.template_resume = resume_object
@@ -103,10 +101,3 @@ class TestTailorPdf:
 
     class TestSplitPdf:
         pass
-
-    def default(self):
-        pass
-
-
-
-
