@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useReducer } from "react";
+import React, { createContext, useContext, useReducer } from "react";
 
 import { useResumeApi } from "../api/resumeApi.ts";
 
@@ -125,7 +125,7 @@ export const ResumesContextProvider: React.FC<{ children: React.ReactNode }> = (
   };
 
   // Async resumes fetching function
-  const fetchResumes = async() => {
+  const fetchResumes = async () => {
     resumesDispatch({ type: "FETCH_START" });
     await new Promise((resolve) => setTimeout(resolve, 1000));
     try {

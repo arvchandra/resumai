@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "ResumAI Browser Extension",
+  "version": "1.0.0",
+  "description": "A Chrome extension that interacts with the ResumAI API",
+  "oauth2": {
+    "client_id": "__GOOGLE_OAUTH_CLIENT_ID_BROWSER_EXTENSION__",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "action": {
+    "default_popup": "src/browser_extension/popup.html"
+  },
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "permissions": ["identity", "scripting", "contextMenus", "tabs"]
+}
