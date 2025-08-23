@@ -11,6 +11,12 @@ export default defineConfig({
         popup: resolve(__dirname, "browser_extension/popup.html"),          // extension popup
         background: resolve(__dirname, "browser_extension/background.ts"),  // background worker
       },
+      output: {
+        entryFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name].[ext]"
+      }
+
     },
     outDir: "dist",
     emptyOutDir: true
