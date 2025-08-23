@@ -1,3 +1,6 @@
+import numpy as np
+from sklearn.cluster import DBSCAN
+from collections import defaultdict
 import pymupdf
 
 class TailorPdf:
@@ -9,6 +12,8 @@ class TailorPdf:
             "height": 0
         }
         self.bullets_to_redact = bullets_to_redact
+        self.column_rects = []
+        self.page_break_rects = []
 
     def tailor_pdf_in_bytes(self):
         try:
@@ -76,7 +81,96 @@ class TailorPdf:
         return template_pdf_unified
 
     def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
-        pass
+        self.column_rects = self.calculate_column_rects(template_pdf_unified[0])
+
+        self.page_break_rects = self.calculate_page_break_spacing(template_pdf_unified[0])
+
+    def calculate_column_rects(self, template_page_unified: pymupdf.Page):
+        """
+        returns a list of rects of the identified columns in the document using the DBSCAN clustering method.
+        DBSCAN will take our array, in this case the horizontal(X coordinate) bounds of each text block in the resume,
+        and identify clusters of similarly grouped bounds. If a text block is not grouped, then it will be given
+        a cluster label of -1. Sorting our text blocks by cluster label, we will then create a rect that encapsulates
+        all the text blocks for a given cluster rect. This will allow us to identify later if a bullet we
+        are redacting/repositioning is in a column that should be offset.
+
+        see: https://inria.hal.science/hal-04668648/document
+             https://github.com/pymupdf/PyMuPDF/discussions/2259
+             https://medium.com/@sachinsoni600517/clustering-like-a-pro-a-beginners-guide-to-dbscan-6c8274c362c4
+
+        TODO: Determine if we need to worry about footer text in resumes; if not, extend column rects to floor
+        TODO: Determine if we should calculate column spacing for each page
+        """
+
+        text_blocks = template_page_unified.get_text("blocks")
+        X = np.array(
+            [(x0, x1) for x0, y0, x1, y1, text, block_no, block_type in text_blocks]
+        )
+        # TODO improve calculation for epsilon
+        dbscan = DBSCAN(eps=self.template_pdf_details["width"]//6)
+        dbscan.fit(X)
+        cluster_labels = dbscan.labels_
+
+        column_clusters = defaultdict(list)
+        for i in range(len(text_blocks)):
+            text_block, text_block_cluster_no = text_blocks[i], cluster_labels[i]
+            column_clusters[text_block_cluster_no].append(text_block)
+
+        column_rects = []
+        for column_cluster_no, column_cluster_blocks in column_clusters.items():
+            if column_cluster_no == -1:  # skip outliers
+                continue
+
+            column_rects.append(self._combine_rects(column_cluster_blocks))
+
+        return column_rects
+
+    def calculate_page_break_spacing(self, template_page_unified: pymupdf.Page):
+        """
+        returns a list of page_break_rects that span from the bottom of text on a previous page (top of footer)
+        to the top of text on the current page (bottom of header)
+        """
+
+        # Note: get_text("blocks") returns array of tuples in the form:
+        # (x0, y0, x1, y1, "lines in the block", block_no, block_type)
+
+        page_count, page_width, page_height = self.template_pdf_details.values()
+
+        # points in our unified pdf where we cross into a new page
+        page_break_heights = [page_height * i for i in range(1, page_count + 1)]
+        page_break_index = 0
+        page_break_rects = []
+
+        # return early if only one page resume
+        if page_count == 1:
+            return page_break_rects
+
+        previous_text_rect = None
+        for text_block in template_page_unified.get_text("blocks"):
+            current_text_rect = self._get_rect(text_block)
+
+            # If we don't have a previous text block or we've reached the end of our page_break_rects list
+            if not previous_text_rect or page_break_index == len(page_break_heights):
+                previous_text_rect = current_text_rect
+                continue
+
+            # when we encounter a text block that is below a page break
+            if current_text_rect.y0 > page_break_heights[page_break_index]:
+                # We want to calculate the distance between the last text block on the previous page
+                # and the first text block on the current page and create a Rect that matches it
+                page_break_x0 = 0
+                page_break_y0 = previous_text_rect.y1
+                page_break_x1 = page_width
+                page_break_y1 = current_text_rect.y0
+                page_break_rects.append(
+                    self._get_rect([page_break_x0, page_break_y0, page_break_x1, page_break_y1])
+                )
+
+                page_break_index += 1
+
+            previous_text_rect = current_text_rect
+
+        return page_break_rects
 
     def redact_bullets_from_pdf(self, bullets_to_redact: [], template_pdf: pymupdf.Document):
         """
@@ -104,3 +198,36 @@ class TailorPdf:
         new_pdf = pymupdf.open()
         new_pdf.new_page(width=page_width, height=page_height * page_count)
         return new_pdf
+
+    @staticmethod
+    def _get_rect(block, offset=0):
+        rect = pymupdf.Rect(block[0], block[1] - offset, block[2], block[3] - offset)
+        if not rect.is_valid or rect.is_empty:
+            raise KeyError("generated_rect is invalid")
+        return rect
+
+    def _combine_rects(self, rect_list):
+        if not rect_list:
+            return None
+
+        page_count, page_width, page_height = self.template_pdf_details.values()
+
+        leftmost_x = page_width
+        topmost_y = page_height * page_count
+        rightmost_x = 0
+        bottommost_y = 0
+
+        for item in rect_list:
+            rect = self._get_rect(item) if not isinstance(item, pymupdf.Rect) else item
+
+            leftmost_x = min(leftmost_x, rect.x0)
+            topmost_y = min(topmost_y, rect.y0)
+            rightmost_x = max(rightmost_x, rect.x1)
+            bottommost_y = max(bottommost_y, rect.y1)
+
+        combined_rect = pymupdf.Rect(leftmost_x, topmost_y, rightmost_x, bottommost_y)
+
+        if not combined_rect.is_valid or combined_rect.is_empty:
+            return None
+
+        return combined_rect

@@ -27,6 +27,11 @@ def bullets_to_redact():
     ]
 
 
+expected_columns = {
+    "test_arvind_resume.pdf": 1,
+    "test_max_resume.pdf": 2
+}
+
 class TestTailorPdf:
     class TestGenerateUnifiedPdf:
 
@@ -79,7 +84,27 @@ class TestTailorPdf:
                 tailor_pdf.generate_unified_pdf()
 
     class TestCalculateSpacing:
-        pass
+        @pytest.mark.parametrize("resume_object", [
+            "test_arvind_resume.pdf",
+            "test_max_resume.pdf"
+        ], indirect=True)
+        def test_calculates_the_correct_number_of_columns(self, resume_object, bullets_to_redact):
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            tailor_pdf.calculate_spacing(unified_resume_doc)
+            assert len(tailor_pdf.column_rects) == expected_columns.get(resume_object.filename(), None)
+
+        @pytest.mark.parametrize("resume_object", [
+            "test_arvind_resume.pdf",
+            "test_max_resume.pdf"
+        ], indirect=True)
+        def test_calculate_the_correct_number_of_page_breaks(self, resume_object, bullets_to_redact):
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            tailor_pdf.calculate_spacing(unified_resume_doc)
+            template_page_count = tailor_pdf.template_pdf_details["page_count"]
+            assert len(tailor_pdf.page_break_rects) == template_page_count - 1
+
 
     class TestRedactBullets:
         pass

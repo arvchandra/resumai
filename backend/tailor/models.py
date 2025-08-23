@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
@@ -37,6 +38,9 @@ class Resume(TimestampMixin, models.Model):
                 Resume.objects.filter(user=self.user, is_default=True).exclude(id=self.id).update(is_default=False)
 
         super().save(*args, **kwargs)
+
+    def filename(self):
+        return os.path.basename(self.file.name)
 
     def get_text(self):
         resume_text = None
