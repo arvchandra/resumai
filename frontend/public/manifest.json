@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "ResumAI Browser Extension",
+  "version": "1.0.0",
+  "description": "ResumAI Chrome extension that tailors resumes to job posting on current page.",
+  "action": {
+    "default_popup": "browser_extension/popup.html"
+  },
+  "background": {
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "permissions": ["identity", "scripting", "contextMenus", "tabs"]
+}
