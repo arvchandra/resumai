@@ -1,11 +1,13 @@
-import json
-
+import os
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.files.base import ContentFile
 from rest_framework.exceptions import NotFound, ValidationError
 import pymupdf4llm
 import docx
 
+from .domain.tailor_resume import TailorPdf
 from .exceptions import ParsingError
 from .mixins import TimestampMixin
 
@@ -37,6 +39,9 @@ class Resume(TimestampMixin, models.Model):
 
         super().save(*args, **kwargs)
 
+    def filename(self):
+        return os.path.basename(self.file.name)
+
     def get_text(self):
         resume_text = None
         match self.file_type:
@@ -64,12 +69,13 @@ class TailoredResumeManager(models.Manager):
 
         company = openai_response.job_posting_company
         role = openai_response.job_posting_role
+        bullets_to_redact = openai_response.non_relevant_bullet_points
 
-        # TODO replace with name builder function
-        name = "Tailored_resume.pdf"
+        name = f"{user.first_name}_{user.last_name}_{company}_{role}_{datetime.now()}_Resume.pdf"
 
-        # TODO replace with tailored resume generator function
-        tailored_resume = template_resume.file
+        tailored_resume_object = TailorPdf(template_resume, bullets_to_redact)
+        tailored_resume_in_bytes = tailored_resume_object.tailor_pdf_in_bytes()
+        tailored_resume_file = ContentFile(tailored_resume_in_bytes, name=name)
 
         model_fields = {
             "name": name,
@@ -77,7 +83,7 @@ class TailoredResumeManager(models.Manager):
             "role": role,
             # TODO need to return the formatted JobPosting url instead
             "job_posting_url": job_posting_url,
-            "file": tailored_resume,
+            "file": tailored_resume_file,
             "template_resume": template_resume,
             "user": user
         }
@@ -91,7 +97,7 @@ class TailoredResumeManager(models.Manager):
 
         return tailored_resume
 
-    def fetch_resume(self, resume_id, user_id):
+    def _fetch_resume(self, resume_id, user_id):
         try:
             template_resume = Resume.objects.get(id=resume_id, user_id=user_id)
             return template_resume
