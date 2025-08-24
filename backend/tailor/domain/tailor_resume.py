@@ -13,6 +13,7 @@ class TailorPdf:
             "height": 0,
         }
         self.unified_page_rect = None
+        self.redacted_rects = []
         self.column_rects = []
         self.page_break_rects = []
 
@@ -175,7 +176,60 @@ class TailorPdf:
         Identifies where in the page our bullets are that we want to delete, saves the location of where they were
         as a Rect (including the line break spacing between them and the next bullet point), and then redacts them
         """
-        pass
+        template_page = template_pdf[0]
+
+        for bullet in bullets_to_redact:
+            rects_containing_bullet = template_page.search_for(bullet)
+            redacted_rect = self._combine_rects(rects_containing_bullet)
+
+            if not redacted_rect:
+                continue
+
+            redacted_rect = self.maybe_add_line_break(redacted_rect, template_page)
+
+            self.redacted_rects.append(redacted_rect)
+            template_page.add_redact_annot(redacted_rect)
+
+        # TODO remove once OpenAI Response is correctly sorting the bullet points
+        self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
+
+        result = template_page.apply_redactions()
+        if not result:
+            # TODO error handling
+            print("could not find any bullets on the page")
+
+        template_pdf.reload_page(template_page)
+        return template_pdf
+
+    def maybe_add_line_break(self, redacted_rect: pymupdf.Rect, template_page: pymupdf.Page):
+        """
+        This function checks if we can find any text below our redacted rect. If so, we will calculate
+        the empty space between them before extending the redacted rect to cover this whitespace. This
+        will allow us to account for it later when we are repositioning the text below it.
+        If we do not find any text below our redacted rect, we return the redacted rect as is
+        """
+
+        # use a negative offset to generate a rect of the same size underneath our redacted rect
+        offset_by_redacted_rect = (redacted_rect.height + 1) * -1
+        redacted_block = list(redacted_rect)
+        rect_underneath_redacted_rect = self._get_rect(redacted_block, offset_by_redacted_rect)
+
+        # search new rect for any text, rebuilding text rect to only encapsulate that text if found
+        text_underneath_redacted_rect = template_page.get_textbox(rect_underneath_redacted_rect)
+        rects_containing_text_underneath = template_page.search_for(text_underneath_redacted_rect)
+
+        text_rect = self._combine_rects(rects_containing_text_underneath)
+
+        if text_rect and not text_rect.intersects(redacted_rect):
+            # extend our redacted rect to just above our text_rect
+            redacted_rect = self._get_rect([
+                redacted_rect.x0,
+                redacted_rect.y0,
+                redacted_rect.x1,
+                text_rect.y0 - 0.000001
+            ])
+
+        return redacted_rect
 
     def format_tailored_pdf_unified(self, redacted_pdf: pymupdf.Document):
         """
