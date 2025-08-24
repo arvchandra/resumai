@@ -3,6 +3,8 @@ import pytest
 
 from tailor.domain.tailor_resume import TailorPdf
 
+from conftest import TEST_RESUMES
+
 
 @pytest.fixture
 def bullets_to_redact():
@@ -26,12 +28,13 @@ def bullets_to_redact():
         'Received a letter of commendation from the client for outstanding performance in understanding the business requirements, delivering high-quality and secure application features, and meeting critical government deadlines.',
     ]
 
+
 @pytest.fixture
 def tailor_pdf(resume_object, bullets_to_redact):
     return TailorPdf(resume_object, bullets_to_redact)
 
 
-expected_columns = {
+EXPECTED_COLUMNS = {
     "test_arvind_resume.pdf": 1,
     "test_max_resume.pdf": 2
 }
@@ -40,20 +43,14 @@ expected_columns = {
 class TestTailorPdf:
     class TestGenerateUnifiedPdf:
 
-        @pytest.mark.parametrize("resume_object", [
-            "test_arvind_resume.pdf",
-            "test_max_resume.pdf"
-        ], indirect=True)
+        @pytest.mark.parametrize("resume_object", TEST_RESUMES, indirect=True)
         def test_generates_unified_pdf_with_correct_text(self, resume_object, bullets_to_redact):
             template_resume_doc = pymupdf.open(resume_object.file.path)
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             unified_resume_doc = tailor_pdf.generate_unified_pdf()
             assert fetch_text(template_resume_doc) == fetch_text(unified_resume_doc)
 
-        @pytest.mark.parametrize("resume_object", [
-            "test_arvind_resume.pdf",
-            "test_max_resume.pdf"
-        ], indirect=True)
+        @pytest.mark.parametrize("resume_object", TEST_RESUMES, indirect=True)
         def test_generates_unified_pdf_with_correct_dimensions(self, resume_object, bullets_to_redact):
             template_resume_doc = pymupdf.open(resume_object.file.path)
             template_resume_details = {
@@ -67,20 +64,14 @@ class TestTailorPdf:
             assert unified_resume_rect.width == template_resume_details["page_width"]
             assert unified_resume_rect.height == template_resume_details["pages"] * template_resume_details["page_height"]
 
-        @pytest.mark.parametrize("resume_object", [
-            "test_arvind_resume.pdf",
-            "test_max_resume.pdf"
-        ], indirect=True)
+        @pytest.mark.parametrize("resume_object", TEST_RESUMES, indirect=True)
         def test_when_template_resume_is_none(self, resume_object, bullets_to_redact):
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             tailor_pdf.template_resume = None
             with pytest.raises(FileNotFoundError):
                 tailor_pdf.generate_unified_pdf()
 
-        @pytest.mark.parametrize("resume_object", [
-            "test_arvind_resume.pdf",
-            "test_max_resume.pdf"
-        ], indirect=True)
+        @pytest.mark.parametrize("resume_object", TEST_RESUMES, indirect=True)
         def test_when_template_resume_has_no_file(self, resume_object, bullets_to_redact):
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             resume_object.file = None
@@ -89,20 +80,14 @@ class TestTailorPdf:
                 tailor_pdf.generate_unified_pdf()
 
     class TestCalculateSpacing:
-        @pytest.mark.parametrize("resume_object", [
-            "test_arvind_resume.pdf",
-            "test_max_resume.pdf"
-        ], indirect=True)
+        @pytest.mark.parametrize("resume_object", TEST_RESUMES, indirect=True)
         def test_calculates_the_correct_number_of_columns(self, resume_object, bullets_to_redact):
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             unified_resume_doc = tailor_pdf.generate_unified_pdf()
             tailor_pdf.calculate_spacing(unified_resume_doc)
-            assert len(tailor_pdf.column_rects) == expected_columns.get(resume_object.filename(), None)
+            assert len(tailor_pdf.column_rects) == EXPECTED_COLUMNS.get(resume_object.filename(), None)
 
-        @pytest.mark.parametrize("resume_object", [
-            "test_arvind_resume.pdf",
-            "test_max_resume.pdf"
-        ], indirect=True)
+        @pytest.mark.parametrize("resume_object", TEST_RESUMES, indirect=True)
         def test_calculate_the_correct_number_of_page_breaks(self, resume_object, bullets_to_redact):
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             unified_resume_doc = tailor_pdf.generate_unified_pdf()

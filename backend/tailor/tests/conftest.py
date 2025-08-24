@@ -4,6 +4,8 @@ import shutil
 
 from factories import UserFactory, ResumeFactory
 
+DEFAULT_RESUME_FILENAME = "test_max_resume.pdf"
+
 
 @pytest.fixture(autouse=True)
 def media_root_override(settings):
@@ -16,9 +18,15 @@ def media_root_override(settings):
         shutil.rmtree(tailored_resumes_path)
 
 
+TEST_RESUMES = [
+    "test_arvind_resume.pdf",
+    "test_max_resume.pdf"
+]
+
+
 @pytest.fixture
 def resume_object(request, db):
-    filename = getattr(request, 'param', "test_max_resume.pdf")
+    filename = getattr(request, 'param', DEFAULT_RESUME_FILENAME)
     filetype = filename.split('.')[-1].upper()
     filepath = f"resumes/{filename}"
     return ResumeFactory(
