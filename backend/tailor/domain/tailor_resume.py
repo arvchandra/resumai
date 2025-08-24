@@ -6,12 +6,13 @@ import pymupdf
 class TailorPdf:
     def __init__(self, template_resume, bullets_to_redact):
         self.template_resume = template_resume
+        self.bullets_to_redact = bullets_to_redact
         self.template_pdf_details = {
             "page_count": 0,
             "width": 0,
-            "height": 0
+            "height": 0,
         }
-        self.bullets_to_redact = bullets_to_redact
+        self.unified_page_rect = None
         self.column_rects = []
         self.page_break_rects = []
 
@@ -78,6 +79,7 @@ class TailorPdf:
 
             template_pdf_page_unified.show_pdf_page(location_on_unified_pdf, template_pdf, page.number)
 
+        self.unified_page_rect = template_pdf_page_unified.rect
         return template_pdf_unified
 
     def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
@@ -130,10 +132,6 @@ class TailorPdf:
         returns a list of page_break_rects that span from the bottom of text on a previous page (top of footer)
         to the top of text on the current page (bottom of header)
         """
-
-        # Note: get_text("blocks") returns array of tuples in the form:
-        # (x0, y0, x1, y1, "lines in the block", block_no, block_type)
-
         page_count, page_width, page_height = self.template_pdf_details.values()
 
         # points in our unified pdf where we cross into a new page
@@ -141,7 +139,7 @@ class TailorPdf:
         page_break_index = 0
         page_break_rects = []
 
-        # return early if only one page resume
+        # return early if only one-page resume
         if page_count == 1:
             return page_break_rects
 
@@ -193,6 +191,9 @@ class TailorPdf:
 
         return self.template_resume.file
 
+    def out_of_bounds(self, rect):
+        return not self.unified_page_rect.contains(rect)
+
     def _generate_unified_pdf(self):
         page_count, page_width, page_height = self.template_pdf_details.values()
         new_pdf = pymupdf.open()
@@ -201,14 +202,17 @@ class TailorPdf:
 
     @staticmethod
     def _get_rect(block, offset=0):
-        rect = pymupdf.Rect(block[0], block[1] - offset, block[2], block[3] - offset)
-        if not rect.is_valid or rect.is_empty:
-            raise KeyError("generated_rect is invalid")
-        return rect
+        try:
+            rect = pymupdf.Rect(block[0], block[1] - offset, block[2], block[3] - offset)
+            if not rect.is_valid or rect.is_empty:
+                raise ValueError("Rect is empty or invalid")
+            return rect
+        except (IndexError, AssertionError, TypeError):
+            raise ValueError("Invalid parameters when generating Rect")
 
     def _combine_rects(self, rect_list):
         if not rect_list:
-            return None
+            raise ValueError("No items passed in to combine")
 
         page_count, page_width, page_height = self.template_pdf_details.values()
 
@@ -228,6 +232,6 @@ class TailorPdf:
         combined_rect = pymupdf.Rect(leftmost_x, topmost_y, rightmost_x, bottommost_y)
 
         if not combined_rect.is_valid or combined_rect.is_empty:
-            return None
+            raise ValueError("Unable to generate a valid combined rect")
 
         return combined_rect

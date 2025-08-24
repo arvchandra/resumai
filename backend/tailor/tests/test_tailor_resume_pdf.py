@@ -26,11 +26,16 @@ def bullets_to_redact():
         'Received a letter of commendation from the client for outstanding performance in understanding the business requirements, delivering high-quality and secure application features, and meeting critical government deadlines.',
     ]
 
+@pytest.fixture
+def tailor_pdf(resume_object, bullets_to_redact):
+    return TailorPdf(resume_object, bullets_to_redact)
+
 
 expected_columns = {
     "test_arvind_resume.pdf": 1,
     "test_max_resume.pdf": 2
 }
+
 
 class TestTailorPdf:
     class TestGenerateUnifiedPdf:
@@ -114,6 +119,73 @@ class TestTailorPdf:
 
     class TestSplitPdf:
         pass
+
+    class TestGetRect:
+        def test_successfully_creates_rect(self, tailor_pdf):
+            expected_rect = pymupdf.Rect([0, 0, 100, 100])
+            rect = tailor_pdf._get_rect([0, 0, 100, 100])
+            assert rect == expected_rect
+
+        @pytest.mark.parametrize("offset", [0, 50, -50])
+        def test_successfully_creates_rect_with_offset(self, tailor_pdf, offset):
+            expected_rect = pymupdf.Rect([100, 100 - offset, 200, 200 - offset])
+            rect = tailor_pdf._get_rect([100, 100, 200, 200], offset)
+            assert rect == expected_rect
+
+        @pytest.mark.parametrize("impossible_rect_value", [
+            (0, 0, 0, 0),
+            (0, 100, 0, 150),
+            (100, 100, 0, 0),
+        ])
+        def test_invalid_or_empty_rect(self, tailor_pdf, impossible_rect_value):
+            with pytest.raises(ValueError) as impossible_rect_error:
+                tailor_pdf._get_rect(impossible_rect_value)
+            assert str(impossible_rect_error.value) == "Rect is empty or invalid"
+
+        @pytest.mark.parametrize("rect_parameters", [
+            (0, 100),
+            ("0", "0", "100", "100"),
+        ])
+        def test_invalid_parameters(self, tailor_pdf, rect_parameters):
+            with pytest.raises(ValueError) as pymupdf_error:
+                tailor_pdf._get_rect(rect_parameters)
+            assert str(pymupdf_error.value) == "Invalid parameters when generating Rect"
+
+    class TestCombineRect:
+        @pytest.mark.parametrize("rect_list", [
+            [pymupdf.Rect(0, 0, 100, 100), pymupdf.Rect(100, 100, 200, 200)],
+            [pymupdf.Rect(0, 0, 100, 100), pymupdf.Rect(50, 0, 75, 90)],
+            [pymupdf.Rect(50, 0, 75, 90), pymupdf.Rect(0, 0, 100, 100)],
+            [(0, 0, 100, 100), (100, 100, 200, 200)],
+            [(0, 0, 100, 100), (50, 0, 75, 90)],
+            [(50, 0, 75, 90), (0, 0, 100, 100)],
+        ])
+        def test_successfully_combines_rect(self, tailor_pdf, rect_list):
+            max_x0 = min([rect[0] for rect in rect_list])
+            max_y0 = min([rect[1] for rect in rect_list])
+            max_x1 = max([rect[2] for rect in rect_list])
+            max_y1 = max([rect[3] for rect in rect_list])
+            expected_rect = pymupdf.Rect(max_x0, max_y0, max_x1, max_y1)
+
+            combined_rect = tailor_pdf._combine_rects(rect_list)
+            assert combined_rect == expected_rect
+
+        def test_when_empty_list(self, tailor_pdf):
+            empty_rect_list = []
+            with pytest.raises(ValueError) as empty_error:
+                tailor_pdf._combine_rects(empty_rect_list)
+            assert str(empty_error.value) == "No items passed in to combine"
+
+        @pytest.mark.parametrize("impossible_rect_values", [
+            (0, 0, 0, 0),
+            (0, 100, 0, 150),
+            (100, 100, 0, 0),
+        ])
+        def test_when_impossible_rect(self, tailor_pdf, impossible_rect_values):
+            impossible_rect = pymupdf.Rect(impossible_rect_values)
+            with pytest.raises(ValueError) as impossible_error:
+                tailor_pdf._combine_rects([impossible_rect])
+            assert str(impossible_error.value) == "Unable to generate a valid combined rect"
 
 
 def fetch_text(resume_doc: pymupdf.Document):

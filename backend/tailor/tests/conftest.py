@@ -18,7 +18,7 @@ def media_root_override(settings):
 
 @pytest.fixture
 def resume_object(request, db):
-    filename = request.param
+    filename = getattr(request, 'param', "test_max_resume.pdf")
     filetype = filename.split('.')[-1].upper()
     filepath = f"resumes/{filename}"
     return ResumeFactory(
