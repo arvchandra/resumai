@@ -269,7 +269,7 @@ class TailorPdf:
 
     def _combine_rects(self, rect_list):
         if not rect_list:
-            raise ValueError("No items passed in to combine")
+            return None
 
         page_count, page_width, page_height = self.template_pdf_details.values()
 

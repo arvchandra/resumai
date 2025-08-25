@@ -3,9 +3,6 @@ import pytest
 
 from tailor.domain.tailor_resume import TailorPdf
 
-from conftest import TEST_RESUMES
-
-
 EXPECTED_COLUMNS = {
     "test_arvind_resume.pdf": 1,
     "test_max_resume.pdf": 2
