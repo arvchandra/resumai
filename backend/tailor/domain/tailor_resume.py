@@ -23,7 +23,7 @@ class TailorPdf:
 
             self.calculate_spacing(template_pdf_unified)
 
-            redacted_pdf_unified = self.redact_bullets_from_pdf(self.bullets_to_redact, template_pdf_unified)
+            redacted_pdf_unified = self.redact_bullets_from_pdf(template_pdf_unified)
 
             tailored_pdf_unified = self.format_tailored_pdf_unified(redacted_pdf_unified)
 
@@ -171,15 +171,18 @@ class TailorPdf:
 
         return page_break_rects
 
-    def redact_bullets_from_pdf(self, bullets_to_redact: [], template_pdf: pymupdf.Document):
+    def redact_bullets_from_pdf(self, template_pdf: pymupdf.Document):
         """
         Identifies where in the page our bullets are that we want to delete, saves the location of where they were
         as a Rect (including the line break spacing between them and the next bullet point), and then redacts them
         """
         template_page = template_pdf[0]
 
-        for bullet in bullets_to_redact:
+        for bullet in self.bullets_to_redact:
             rects_containing_bullet = template_page.search_for(bullet)
+            if not rects_containing_bullet:
+                continue
+
             redacted_rect = self._combine_rects(rects_containing_bullet)
 
             if not redacted_rect:
@@ -210,7 +213,7 @@ class TailorPdf:
         """
 
         # use a negative offset to generate a rect of the same size underneath our redacted rect
-        offset_by_redacted_rect = (redacted_rect.height + 1) * -1
+        offset_by_redacted_rect = -1 * (redacted_rect.height + 1)
         redacted_block = list(redacted_rect)
         rect_underneath_redacted_rect = self._get_rect(redacted_block, offset_by_redacted_rect)
 
@@ -221,7 +224,7 @@ class TailorPdf:
         text_rect = self._combine_rects(rects_containing_text_underneath)
 
         if text_rect and not text_rect.intersects(redacted_rect):
-            # extend our redacted rect to just above our text_rect
+            # shrink our redacted rect to just above our text_rect
             redacted_rect = self._get_rect([
                 redacted_rect.x0,
                 redacted_rect.y0,
