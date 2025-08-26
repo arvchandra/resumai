@@ -8,11 +8,6 @@ EXPECTED_COLUMNS = {
     "test_max_resume.pdf": 2
 }
 
-EXPECTED_BORDERS = {
-    "test_arvind_resume.pdf": 0,
-    "test_max_resume.pdf": 2
-}
-
 BULLETS_TO_REDACT = {
     "test_arvind_resume.pdf": [
         'Pursued freelance projects in music production and video editing, expanding creative and technical versatility.',
@@ -106,6 +101,14 @@ class TestTailorPdf:
             expected_borders = [(column.x0, column.x1) for column in tailor_pdf.column_rects]
             assert all([rect_boarders in expected_borders for rect_boarders in redacted_rect_borders])
 
+        def test_raises_error_when_nothing_is_redacted(self, tailor_pdf):
+            tailor_pdf.bullets_to_redact = []
+            unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            tailor_pdf.calculate_spacing(unified_resume_doc)
+            with pytest.raises(ValueError) as empty_bullet_error:
+                tailor_pdf.redact_bullets_from_pdf(unified_resume_doc)
+            assert str(empty_bullet_error.value) == "No redactions applied"
+
     class TestFormatPdf:
         pass
 
@@ -113,9 +116,14 @@ class TestTailorPdf:
         pass
 
     class TestGetRect:
-        def test_successfully_creates_rect(self, tailor_pdf):
+        def test_successfully_creates_rect_from_sequence(self, tailor_pdf):
             expected_rect = pymupdf.Rect([0, 0, 100, 100])
             rect = tailor_pdf._get_rect([0, 0, 100, 100])
+            assert rect == expected_rect
+
+        def test_successfully_creates_rect_from_rect(self, tailor_pdf):
+            expected_rect = pymupdf.Rect([0, 0, 100, 100])
+            rect = tailor_pdf._get_rect(expected_rect)
             assert rect == expected_rect
 
         @pytest.mark.parametrize("offset", [0, 50, -50])

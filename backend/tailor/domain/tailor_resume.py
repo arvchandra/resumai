@@ -187,6 +187,7 @@ class TailorPdf:
             redacted_rect = self._combine_rects(rects_containing_bullet)
 
             if not redacted_rect:
+                # TODO log that we couldnt find bullet point
                 continue
 
             redacted_rect = self.format_redacted_rect(redacted_rect)
@@ -199,18 +200,17 @@ class TailorPdf:
 
         result = template_page.apply_redactions()
         if not result:
-            # TODO error handling
-            print("could not find any bullets on the page")
+            raise ValueError("No redactions applied")
 
         # template_pdf.reload_page(template_page)
         return template_pdf
 
     def format_redacted_rect(self, redacted_rect: pymupdf.Rect):
-        redacted_rect = self.fit_to_column(redacted_rect)
+        redacted_rect = self.fit_borders_to_column(redacted_rect)
         redacted_rect = self.maybe_add_line_break(redacted_rect)
         return redacted_rect
 
-    def fit_to_column(self, redacted_rect: pymupdf.Rect):
+    def fit_borders_to_column(self, redacted_rect: pymupdf.Rect):
         """
         This will extend the X borders of our rect to either the column that it is located in, or to
         the width of the page if there is only one column. This will account for bullet symbols (e.g. "-") and \n
@@ -230,28 +230,24 @@ class TailorPdf:
         will allow us to account for it later when we are repositioning the text below it.
         If we do not find any text below our redacted rect, we return the redacted rect as is
 
-        TODO handle when
+        TODO ensure that we are only checking one lines worth and are not accidentally hitting the next job experience
         """
 
-        # use a negative offset to generate a rect of the same size underneath our redacted rect
+        # use a negative offset to generate a rect of the same size underneath and the +1 to avoid intersection
         offset_by_redacted_rect = -1 * (redacted_rect.height + 1)
-        redacted_block = list(redacted_rect)
-        rect_underneath_redacted_rect = self._get_rect(redacted_block, offset_by_redacted_rect)
+        rect_underneath_redacted_rect = self._get_rect(redacted_rect, offset_by_redacted_rect)
 
         # search new rect for any text, rebuilding text rect to only encapsulate that text if found
         text_underneath_redacted_rect = self.unified_template_page.get_textbox(rect_underneath_redacted_rect)
-        rects_containing_text_underneath = self.unified_template_page.search_for(text_underneath_redacted_rect)
+        # checks if there's no meaningful text (just whitespace or empty)
+        if not text_underneath_redacted_rect.strip():
+            return redacted_rect
 
-        text_rect = self._combine_rects(rects_containing_text_underneath)
+        nearest_rect_containing_text = self.unified_template_page.search_for(text_underneath_redacted_rect)[0]
 
-        if text_rect and not text_rect.intersects(redacted_rect):
-            # shrink our redacted rect to just above our text_rect
-            redacted_rect = self._get_rect([
-                redacted_rect.x0,
-                redacted_rect.y0,
-                redacted_rect.x1,
-                text_rect.y0 - 0.000001
-            ])
+        # stretch the bottom of our redacted rect to just above our text_rect
+        if nearest_rect_containing_text and not nearest_rect_containing_text.intersects(redacted_rect):
+            redacted_rect.y1 = nearest_rect_containing_text.y0 - 0.000001
 
         return redacted_rect
 
