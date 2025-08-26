@@ -190,7 +190,7 @@ class TailorPdf:
                 # TODO log that we couldnt find bullet point
                 continue
 
-            redacted_rect = self.format_redacted_rect(redacted_rect)
+            self.format_redacted_rect(redacted_rect)
 
             self.redacted_rects.append(redacted_rect)
             template_page.add_redact_annot(redacted_rect)
@@ -202,13 +202,11 @@ class TailorPdf:
         if not result:
             raise ValueError("No redactions applied")
 
-        # template_pdf.reload_page(template_page)
         return template_pdf
 
     def format_redacted_rect(self, redacted_rect: pymupdf.Rect):
-        redacted_rect = self.fit_borders_to_column(redacted_rect)
-        redacted_rect = self.maybe_add_line_break(redacted_rect)
-        return redacted_rect
+        self.fit_borders_to_column(redacted_rect)
+        self.maybe_add_line_break(redacted_rect)
 
     def fit_borders_to_column(self, redacted_rect: pymupdf.Rect):
         """
@@ -219,7 +217,7 @@ class TailorPdf:
             if column.contains(redacted_rect):
                 redacted_rect.x0 = column.x0
                 redacted_rect.x1 = column.x1
-                return redacted_rect
+                return
 
         raise ValueError("Unable to find rect in column")
 
@@ -231,25 +229,26 @@ class TailorPdf:
         If we do not find any text below our redacted rect, we return the redacted rect as is
 
         TODO ensure that we are only checking one lines worth and are not accidentally hitting the next job experience
+        TODO verify that this approach works for most resumes (i.e. bullet line spacing is < the height of a bullet point)
         """
 
         # use a negative offset to generate a rect of the same size underneath and the +1 to avoid intersection
         offset_by_redacted_rect = -1 * (redacted_rect.height + 1)
         rect_underneath_redacted_rect = self._get_rect(redacted_rect, offset_by_redacted_rect)
-
-        # search new rect for any text, rebuilding text rect to only encapsulate that text if found
         text_underneath_redacted_rect = self.unified_template_page.get_textbox(rect_underneath_redacted_rect)
-        # checks if there's no meaningful text (just whitespace or empty)
-        if not text_underneath_redacted_rect.strip():
-            return redacted_rect
+        if not text_underneath_redacted_rect.strip():  # checks if there is only whitespace
+            return
 
+        # TODO verify that we won't encounter duplicate text that could be present elsewhere
+        # by rebuilding our rect by searching for the text we found, we can ensure we are not including the line
+        # break spacing between our redacted rect and this text just below it.
         nearest_rect_containing_text = self.unified_template_page.search_for(text_underneath_redacted_rect)[0]
 
-        # stretch the bottom of our redacted rect to just above our text_rect
+        # stretch the bottom of our redacted rect to just above our text_rect to include line break spacing
         if nearest_rect_containing_text and not nearest_rect_containing_text.intersects(redacted_rect):
             redacted_rect.y1 = nearest_rect_containing_text.y0 - 0.000001
 
-        return redacted_rect
+        return
 
     def format_tailored_pdf_unified(self, redacted_pdf: pymupdf.Document):
         """
