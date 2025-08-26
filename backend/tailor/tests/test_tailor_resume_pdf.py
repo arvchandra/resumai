@@ -8,6 +8,11 @@ EXPECTED_COLUMNS = {
     "test_max_resume.pdf": 2
 }
 
+EXPECTED_BORDERS = {
+    "test_arvind_resume.pdf": 0,
+    "test_max_resume.pdf": 2
+}
+
 BULLETS_TO_REDACT = {
     "test_arvind_resume.pdf": [
         'Pursued freelance projects in music production and video editing, expanding creative and technical versatility.',
@@ -85,10 +90,21 @@ class TestTailorPdf:
     class TestRedactBullets:
         def test_successfully_redacts_bullets(self, tailor_pdf):
             unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            tailor_pdf.calculate_spacing(unified_resume_doc)
+            initial_bullets = [bullet for bullet in tailor_pdf.bullets_to_redact if unified_resume_doc[0].search_for(bullet)]
+            assert initial_bullets
             redacted_pdf = tailor_pdf.redact_bullets_from_pdf(unified_resume_doc)
             redacted_page = redacted_pdf[0]
             remaining_bullets = [bullet for bullet in tailor_pdf.bullets_to_redact if redacted_page.search_for(bullet)]
             assert not remaining_bullets
+
+        def test_redacted_borders_are_formatted_correctly(self, tailor_pdf):
+            unified_resume_doc = tailor_pdf.generate_unified_pdf()
+            tailor_pdf.calculate_spacing(unified_resume_doc)
+            tailor_pdf.redact_bullets_from_pdf(unified_resume_doc)
+            redacted_rect_borders = [(rect.x0, rect.x1) for rect in tailor_pdf.redacted_rects]
+            expected_borders = [(column.x0, column.x1) for column in tailor_pdf.column_rects]
+            assert all([rect_boarders in expected_borders for rect_boarders in redacted_rect_borders])
 
     class TestFormatPdf:
         pass
@@ -148,9 +164,8 @@ class TestTailorPdf:
 
         def test_when_empty_list(self, tailor_pdf):
             empty_rect_list = []
-            with pytest.raises(ValueError) as empty_error:
-                tailor_pdf._combine_rects(empty_rect_list)
-            assert str(empty_error.value) == "No items passed in to combine"
+            returned_rect = tailor_pdf._combine_rects(empty_rect_list)
+            assert returned_rect is None
 
         @pytest.mark.parametrize("impossible_rect_values", [
             (0, 0, 0, 0),
