@@ -6,11 +6,10 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.urls import reverse
 
 GOOGLE_USER_INFO_API_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
