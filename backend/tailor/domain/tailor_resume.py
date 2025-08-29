@@ -12,7 +12,8 @@ class TailorPdf:
             "width": 0,
             "height": 0,
         }
-        self.unified_page_rect = None
+        self.unified_template_page = None
+        self.redacted_rects = []
         self.column_rects = []
         self.page_break_rects = []
 
@@ -22,7 +23,7 @@ class TailorPdf:
 
             self.calculate_spacing(template_pdf_unified)
 
-            redacted_pdf_unified = self.redact_bullets_from_pdf(self.bullets_to_redact, template_pdf_unified)
+            redacted_pdf_unified = self.redact_bullets_from_pdf(template_pdf_unified)
 
             tailored_pdf_unified = self.format_tailored_pdf_unified(redacted_pdf_unified)
 
@@ -60,8 +61,8 @@ class TailorPdf:
         }
 
         # creates unified pdf with one page that is as long as there are pages in our template pdf
-        template_pdf_unified = self._generate_unified_pdf()
-        template_pdf_page_unified = template_pdf_unified[0]
+        unified_template_pdf = self._generate_unified_pdf()
+        unified_template_page = unified_template_pdf[0]
 
         # Maps pages from template pdf onto unified pdf
         for page in template_pdf:
@@ -77,10 +78,10 @@ class TailorPdf:
                 page.rect.x1,
                 updated_bottom_of_page)
 
-            template_pdf_page_unified.show_pdf_page(location_on_unified_pdf, template_pdf, page.number)
+            unified_template_page.show_pdf_page(location_on_unified_pdf, template_pdf, page.number)
 
-        self.unified_page_rect = template_pdf_page_unified.rect
-        return template_pdf_unified
+        self.unified_template_page = unified_template_page
+        return unified_template_pdf
 
     def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
         self.column_rects = self.calculate_column_rects(template_pdf_unified[0])
@@ -124,6 +125,10 @@ class TailorPdf:
                 continue
 
             column_rects.append(self._combine_rects(column_cluster_blocks))
+
+        # include entire page dimensions if only one column
+        if len(column_rects) == 1:
+            column_rects[0] = self.unified_template_page.rect
 
         return column_rects
 
@@ -170,12 +175,80 @@ class TailorPdf:
 
         return page_break_rects
 
-    def redact_bullets_from_pdf(self, bullets_to_redact: [], template_pdf: pymupdf.Document):
+    def redact_bullets_from_pdf(self, template_pdf: pymupdf.Document):
         """
         Identifies where in the page our bullets are that we want to delete, saves the location of where they were
         as a Rect (including the line break spacing between them and the next bullet point), and then redacts them
         """
-        pass
+        template_page = template_pdf[0]
+
+        for bullet in self.bullets_to_redact:
+            rects_containing_bullet = template_page.search_for(bullet)
+            redacted_rect = self._combine_rects(rects_containing_bullet)
+
+            if not redacted_rect:
+                # TODO log that we couldnt find bullet point
+                continue
+
+            self.format_redacted_rect(redacted_rect)
+
+            self.redacted_rects.append(redacted_rect)
+            template_page.add_redact_annot(redacted_rect)
+
+        # TODO remove once OpenAI Response is correctly sorting the bullet points
+        self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
+
+        result = template_page.apply_redactions()
+        if not result:
+            raise ValueError("No redactions applied")
+
+        return template_pdf
+
+    def format_redacted_rect(self, redacted_rect: pymupdf.Rect):
+        self.fit_borders_to_column(redacted_rect)
+        self.maybe_add_line_break(redacted_rect)
+
+    def fit_borders_to_column(self, redacted_rect: pymupdf.Rect):
+        """
+        This will extend the X borders of our rect to either the column that it is located in, or to
+        the width of the page if there is only one column. This will account for bullet symbols (e.g. "-") and \n
+        """
+        for column in self.column_rects:
+            if column.contains(redacted_rect):
+                redacted_rect.x0 = column.x0
+                redacted_rect.x1 = column.x1
+                return
+
+        raise ValueError("Unable to find rect in column")
+
+    def maybe_add_line_break(self, redacted_rect: pymupdf.Rect):
+        """
+        This function checks if we can find any text below our redacted rect. If so, we will calculate
+        the empty space between them before extending the redacted rect to cover this whitespace. This
+        will allow us to account for it later when we are repositioning the text below it.
+        If we do not find any text below our redacted rect, we return the redacted rect as is
+
+        TODO ensure that we are only checking one lines worth and are not accidentally hitting the next job experience
+        TODO verify that this approach works for most resumes (i.e. bullet line spacing is < the height of a bullet point)
+        """
+
+        # use a negative offset to generate a rect of the same size underneath and the +1 to avoid intersection
+        offset_by_redacted_rect = -1 * (redacted_rect.height + 1)
+        rect_underneath_redacted_rect = self._get_rect(redacted_rect, offset_by_redacted_rect)
+        text_underneath_redacted_rect = self.unified_template_page.get_textbox(rect_underneath_redacted_rect)
+        if not text_underneath_redacted_rect.strip():  # checks if there is only whitespace
+            return
+
+        # TODO verify that we won't encounter duplicate text that could be present elsewhere
+        # by rebuilding our rect by searching for the text we found, we can ensure we are not including the line
+        # break spacing between our redacted rect and this text just below it.
+        nearest_rect_containing_text = self.unified_template_page.search_for(text_underneath_redacted_rect)[0]
+
+        # stretch the bottom of our redacted rect to just above our text_rect to include line break spacing
+        if nearest_rect_containing_text and not nearest_rect_containing_text.intersects(redacted_rect):
+            redacted_rect.y1 = nearest_rect_containing_text.y0 - 0.000001
+
+        return
 
     def format_tailored_pdf_unified(self, redacted_pdf: pymupdf.Document):
         """
@@ -192,7 +265,7 @@ class TailorPdf:
         return self.template_resume.file
 
     def out_of_bounds(self, rect):
-        return not self.unified_page_rect.contains(rect)
+        return not self.unified_template_page.rect.contains(rect)
 
     def _generate_unified_pdf(self):
         page_count, page_width, page_height = self.template_pdf_details.values()
@@ -212,7 +285,7 @@ class TailorPdf:
 
     def _combine_rects(self, rect_list):
         if not rect_list:
-            raise ValueError("No items passed in to combine")
+            return None
 
         page_count, page_width, page_height = self.template_pdf_details.values()
 

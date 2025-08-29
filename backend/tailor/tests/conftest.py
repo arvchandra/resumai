@@ -24,7 +24,7 @@ TEST_RESUMES = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture(params=TEST_RESUMES)
 def resume_object(request, db):
     filename = getattr(request, 'param', DEFAULT_RESUME_FILENAME)
     filetype = filename.split('.')[-1].upper()
