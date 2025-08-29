@@ -35,6 +35,7 @@ jobs:
     - name: Test with pytest
       run: |
         coverage run -m pytest  -v -s
+      working-directory: ./backend
     - name: Generate Coverage Report
       run: |
         coverage report -m
