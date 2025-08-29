@@ -3,6 +3,10 @@
 
 name: Python application
 
+defaults:
+  run:
+    working-directory: ./backend
+
 on:
   push:
     branches: [ "main" ]
@@ -52,7 +56,6 @@ jobs:
         GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.VITE_GOOGLE_OAUTH_CLIENT_ID }}
       run: |
         coverage run -m pytest  -v -s
-      working-directory: ./backend
     - name: Generate Coverage Report
       run: |
         coverage report -m
