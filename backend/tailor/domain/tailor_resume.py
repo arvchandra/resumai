@@ -201,7 +201,6 @@ class TailorPdf:
         if not result:
             raise ValueError("No redactions applied")
         return
-        # return template_pdf
 
     def format_redacted_rect(self, redacted_rect: pymupdf.Rect):
         self.fit_borders_to_column(redacted_rect)
@@ -234,7 +233,7 @@ class TailorPdf:
         text_including_bullet_rect = self._combine_rects(self.unified_template_page.search_for(text_including_bullet))
 
         redacted_rect.y0 = min(redacted_rect.y0, text_including_bullet_rect.y0)
-        redacted_rect.yy = max(redacted_rect.y1, text_including_bullet_rect.y1)
+        redacted_rect.y1 = max(redacted_rect.y1, text_including_bullet_rect.y1)
 
     def maybe_add_line_break(self, redacted_rect: pymupdf.Rect):
         """
