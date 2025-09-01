@@ -302,12 +302,12 @@ class TailorPdf:
         If it is, then text_block_rect is the next available text_block after our redactions, which means that we could
         have jumped over multiple redactions to get there.
         Example:
-        Template PDF
+        Page before redaction
         - A
         - B
         - C
         - D
-        Redacted PDF
+        Page after redaction
         - A
              <- B has been redacted
              <- C has been redacted
