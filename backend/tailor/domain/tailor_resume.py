@@ -255,7 +255,136 @@ class TailorPdf:
         This function repositions the remaining text on our redacted pdf onto a new pdf using the location of our
         redacted rects to determine how much we are moving the repositioned text up by.
         """
-        pass
+        redacted_page = redacted_pdf[0]
+
+        tailored_pdf_unified = self._generate_unified_pdf()
+        tailored_page_unified = tailored_pdf_unified[0]
+
+        redacted_rect_index = 0
+        total_offset_by = 0
+        for text_block in redacted_page.get_text("blocks"):
+            text_rect = self._get_rect(text_block)
+
+            redacted_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
+            total_offset_by += redacted_offset
+
+            # TODO account for self.page_break_rects
+            repositioned_text_rect = self._get_rect(text_block, total_offset_by)
+            interim_pdf_unified = self.isolate_repositioned_rect(repositioned_text_rect, redacted_pdf, text_rect)
+
+            tailored_page_unified.show_pdf_page(
+                repositioned_text_rect,
+                interim_pdf_unified,
+                clip=repositioned_text_rect
+            )
+
+            interim_pdf_unified.close()
+
+        return tailored_pdf_unified
+
+    def calculate_text_rect_offset(self, redacted_rect_index: int, text_block_rect: pymupdf.Rect):
+        """
+        Here we calculate if the text_block_rect we are evaluating is below the redacted_rect located at our index.
+        If it is, then text_block_rect is the next available text_block after our redactions, which means that we could
+        have jumped over multiple redactions to get there.
+        Example:
+        Template PDF
+        - A
+        - B
+        - C
+        - D
+        Redacted PDF
+        - A
+             <- B has been redacted
+             <- C has been redacted
+        - D  <- needs to be repositioned on the new pdf by the height of B + C
+        Tailored PDF
+        - A
+        - D
+        This means we need to keep stepping along our redacted_rect list until our text_block_rect is no longer
+        below a redacted_rect or we have run through all of our redacted_rects
+        """
+        if not self.redacted_rects or redacted_rect_index >= len(self.redacted_rects):
+            return 0, redacted_rect_index
+
+        # if the bottom of the text block rect is above the current redacted rect
+        if text_block_rect.y1 <= self.redacted_rects[redacted_rect_index].y0:
+            return 0, redacted_rect_index
+
+        redacted_offset = 0
+        current_redacted_rect_index = redacted_rect_index
+        # we add the y distance between the top and bottom of our redacted rect before progressing
+        # to the next one, repeating as long as our current text block is below a redacted rect
+        while text_block_rect.y0 > self.redacted_rects[current_redacted_rect_index].y1:
+
+            redacted_offset += self.redacted_rects[current_redacted_rect_index].height
+            current_redacted_rect_index += 1
+
+            # terminates early if we get to the end of our list
+            if current_redacted_rect_index == len(self.redacted_rects):
+                break
+
+        return redacted_offset, current_redacted_rect_index
+
+    def isolate_repositioned_rect(self, repositioned_rect, redacted_pdf, template_rect):
+        """
+        This function takes our repositioned text block from the template resume and copies that Rect onto a
+        temporary PDF. Because pymupdf's show_pdf_page will also copy all text, links, and annotations on the page,
+        not just the text inside the Rect (See: https://pymupdf.readthedocs.io/en/latest/page.html#Page.show_pdf_page)
+        we need to annotate all the space around our repositioned text block and redact it to remove all extraneous
+        text/links. We then return the temporary PDF page with only the text block.
+        """
+        interim_pdf_unified = self._generate_unified_pdf()
+        interim_page_unified = interim_pdf_unified[0]
+
+        interim_page_unified.show_pdf_page(
+            repositioned_rect,
+            redacted_pdf,
+            clip=template_rect
+        )
+
+        page_rect = interim_page_unified.rect
+
+        # redact everything else by creating four Rects around our rect and redacting everything around it
+        rect_above_repositioned_rect = self._get_rect([
+            page_rect.x0,  # Leftmost part of Page
+            page_rect.y0,  # Top of Page
+            page_rect.x1,  # Rightmost part of Page
+            repositioned_rect.y0  # Top of repositioned rect
+        ])
+
+        rect_left_of_repositioned_rect = self._get_rect([
+            page_rect.x0,  # Leftmost part of Page
+            repositioned_rect.y0,  # Top of repositioned rect
+            repositioned_rect.x0,  # Leftmost part of repositioned rect
+            repositioned_rect.y1  # Bottom of repositioned rect
+        ])
+
+        rect_right_of_repositioned_rect = self._get_rect([
+            repositioned_rect.x1,  # Rightmost part of repositioned rect
+            repositioned_rect.y0,  # Top of repositioned rect
+            page_rect.x1,  # Rightmost part of Page
+            repositioned_rect.y1  # Bottom of repositioned rect
+        ])
+
+        rect_below_repositioned_rect = self._get_rect([
+            page_rect.x0,  # Leftmost part of Page
+            repositioned_rect.y1,  # Bottom of repositioned rect
+            page_rect.x1,  # Rightmost part of Page
+            page_rect.y1  # Bottom of page
+        ])
+
+        for redact_rect in (
+                rect_above_repositioned_rect,
+                rect_left_of_repositioned_rect,
+                rect_right_of_repositioned_rect,
+                rect_below_repositioned_rect
+        ):
+            interim_page_unified.add_redact_annot(redact_rect)
+
+        interim_page_unified.apply_redactions()
+        interim_pdf_unified.reload_page(interim_page_unified)
+        return interim_pdf_unified
 
     def split_unified_pdf(self, unified_pdf):
         """
