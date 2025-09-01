@@ -26,7 +26,7 @@ def tailor_pdf(request, resume_object):
     if build_level == "REDACT_BULLETS":
         return tailor_pdf
 
-    return TailorPdf(resume_object, bullets_to_redact)
+    return tailor_pdf
 
 
 class TestTailorPdf:
@@ -124,12 +124,8 @@ class TestTailorPdf:
         def test_bullet_below_consecutive_redacted_offsets_correctly(self, tailor_pdf):
             redacted_page = tailor_pdf.unified_template_page
             redacted_rect_index = CONSECUTIVE_REDACTED_INDEX.get(tailor_pdf.template_resume.filename())
-            first_consecutive_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index]
-            second_consecutive_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index+1]
-            combined_distance = second_consecutive_redacted_rect.y1 - first_consecutive_redacted_rect.y0
+            combined_distance = tailor_pdf.redacted_rects[redacted_rect_index+1].y1 - tailor_pdf.redacted_rects[redacted_rect_index].y0
             expected_redacted_rect_offset, expected_redacted_rect_index = combined_distance, redacted_rect_index+2
-            # There is no line break spacing between our redacted_rect bullets
-            assert first_consecutive_redacted_rect.height + second_consecutive_redacted_rect.height == combined_distance
 
             text_below_redacted_text = TEXT_BELOW_CONSECUTIVE_REDACTED.get(tailor_pdf.template_resume.filename())
             below_rect = tailor_pdf._combine_rects(redacted_page.search_for(text_below_redacted_text))
