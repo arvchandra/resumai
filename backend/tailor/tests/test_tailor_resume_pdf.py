@@ -119,6 +119,7 @@ class TestTailorPdf:
         @pytest.mark.parametrize("tailor_pdf", ["CALCULATE_SPACING"], indirect=True)
         def test_calculates_the_correct_number_of_columns(self, tailor_pdf):
             assert len(tailor_pdf.column_rects) == EXPECTED_COLUMNS.get(tailor_pdf.template_resume.filename(), None)
+            assert all([column["offset"] == 0 for column in tailor_pdf.column_rects.values()])
 
         @pytest.mark.parametrize("tailor_pdf", ["CALCULATE_SPACING"], indirect=True)
         def test_calculate_the_correct_number_of_page_breaks(self, tailor_pdf):
@@ -138,7 +139,7 @@ class TestTailorPdf:
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_redacted_borders_are_formatted_correctly(self, tailor_pdf):
             redacted_rect_borders = [(rect.x0, rect.x1) for rect in tailor_pdf.redacted_rects]
-            expected_borders = [(column.x0, column.x1) for column in tailor_pdf.column_rects]
+            expected_borders = [(column["rect"].x0, column["rect"].x1) for column in tailor_pdf.column_rects.values()]
             assert all([rect_boarders in expected_borders for rect_boarders in redacted_rect_borders])
 
         def test_raises_error_when_nothing_is_redacted(self, tailor_pdf):

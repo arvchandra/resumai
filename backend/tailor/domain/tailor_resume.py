@@ -14,7 +14,7 @@ class TailorPdf:
         }
         self.unified_template_page = None
         self.redacted_rects = []
-        self.column_rects = []
+        self.column_rects = {}
         self.page_break_rects = []
 
     def tailor_pdf_in_bytes(self):
@@ -118,16 +118,19 @@ class TailorPdf:
             text_block, text_block_cluster_no = text_blocks[i], cluster_labels[i]
             column_clusters[text_block_cluster_no].append(text_block)
 
-        column_rects = []
+        column_rects = {}
         for column_cluster_no, column_cluster_blocks in column_clusters.items():
             if column_cluster_no == -1:  # skip outliers
                 continue
 
-            column_rects.append(self._combine_rects(column_cluster_blocks))
+            column_rects[column_cluster_no] = {
+                "rect": self._combine_rects(column_cluster_blocks),
+                "offset": 0
+            }
 
         # include entire page dimensions if only one column
         if len(column_rects) == 1:
-            column_rects[0] = self.unified_template_page.rect
+            column_rects[0]["rect"] = self.unified_template_page.rect
 
         return column_rects
 
@@ -195,6 +198,7 @@ class TailorPdf:
             template_page.add_redact_annot(redacted_rect)
 
         # TODO remove once OpenAI Response is correctly sorting the bullet points
+        # TODO account for column
         self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
 
         result = template_page.apply_redactions()
@@ -212,11 +216,12 @@ class TailorPdf:
         This will extend the X borders of our rect to either the column that it is located in, or to
         the width of the page if there is only one column. This will account for bullet symbols (e.g. "-") and \n
         """
-        for column in self.column_rects:
-            if column.contains(redacted_rect):
-                redacted_rect.x0 = column.x0
-                redacted_rect.x1 = column.x1
-                return
+
+        column_id = self._get_column_id(redacted_rect)
+        if column_id is not None:
+            redacted_rect.x0 = self.column_rects[column_id]["rect"].x0
+            redacted_rect.x1 = self.column_rects[column_id]["rect"].x1
+            return
 
         raise ValueError("Unable to find rect in column")
 
@@ -275,15 +280,20 @@ class TailorPdf:
         tailored_page_unified = tailored_pdf_unified[0]
 
         redacted_rect_index = 0
-        total_offset_by = 0
+        # total_offset_by = 0
         for text_block in redacted_page.get_text("blocks"):
             text_rect = self._get_rect(text_block)
 
-            redacted_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
-            total_offset_by += redacted_offset
+            column_id = self._get_column_id(text_rect)
+            column = self.column_rects[column_id]
+
+            column_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
+
+            column["offset"] += column_offset
+            # total_offset_by += redacted_offset
 
             # TODO account for self.page_break_rects
-            repositioned_text_rect = self._get_rect(text_block, total_offset_by)
+            repositioned_text_rect = self._get_rect(text_block, column["offset"])
             interim_pdf_unified = self.isolate_repositioned_rect(repositioned_text_rect, redacted_page.parent, text_rect)
 
             tailored_page_unified.show_pdf_page(
@@ -321,15 +331,22 @@ class TailorPdf:
         if not self.redacted_rects or redacted_rect_index >= len(self.redacted_rects):
             return 0, redacted_rect_index
 
+        redacted_rect = self.redacted_rects[redacted_rect_index]
+        text_column, redacted_column = self._get_column_id(text_block_rect), self._get_column_id(redacted_rect)
+
+        # return if columns are not aligned
+        if text_column != redacted_column:
+            return 0, redacted_rect_index
+
         # if the bottom of the text block rect is above the current redacted rect
-        if text_block_rect.y1 <= self.redacted_rects[redacted_rect_index].y0:
+        if text_block_rect.y1 <= redacted_rect.y0:
             return 0, redacted_rect_index
 
         redacted_offset = 0
         current_redacted_rect_index = redacted_rect_index
         # we add the y distance between the top and bottom of our redacted rect before progressing
         # to the next one, repeating as long as our current text block is below a redacted rect
-        while text_block_rect.y0 >= self.redacted_rects[current_redacted_rect_index].y1:
+        while text_block_rect.y0 >= self.redacted_rects[current_redacted_rect_index].y1 and text_column == redacted_column:
 
             redacted_offset += self.redacted_rects[current_redacted_rect_index].height
             current_redacted_rect_index += 1
@@ -337,6 +354,10 @@ class TailorPdf:
             # terminates early if we get to the end of our list
             if current_redacted_rect_index == len(self.redacted_rects):
                 break
+
+            # updates redacted_column
+            next_redacted_rect = self.redacted_rects[current_redacted_rect_index]
+            redacted_column = self._get_column_id(next_redacted_rect)
 
         return redacted_offset, current_redacted_rect_index
 
@@ -415,6 +436,17 @@ class TailorPdf:
         new_pdf = pymupdf.open()
         new_pdf.new_page(width=page_width, height=page_height * page_count)
         return new_pdf
+
+    def _get_column_id(self, rect: pymupdf.Rect):
+        column_id = None
+
+        for col_id, column in self.column_rects.items():
+            if column["rect"].contains(rect):
+                column_id = col_id
+                break
+
+        #TODO raise error or 0 if found in all
+        return column_id
 
     @staticmethod
     def _get_rect(block, offset=0):
