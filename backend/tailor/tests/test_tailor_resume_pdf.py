@@ -13,10 +13,11 @@ BULLETS_TO_REDACT = {
         'Pursued freelance projects in music production and video editing, expanding creative and technical versatility.',
         'Developed the Django/Python/React/Typescript/Postgres Learning Management Platform and the Django Admin.',
         'Led a technical debt resolution strategy in collaboration with the CTO, which resulted in consistent allotment of time and resources to fixing bugs and improving user experience.',
-        'Deployed the Docker application to AWS through a customized GitHub Actions pipeline, which included linting, unit and integration testing, and feature-flag testing on both Staging and Production servers.',
+        'Deployed the Docker application to AWS through a customized GitHub Actions pipeline, which included linting, unit and integration testing, and feature-flag testing on both Staging and Production servers.', # Causing problems with next job experience spacing
         'Generated 300% increase in revenue for the Press Release product by converting a basic HTML form into a more robust and user-friendly single-page React application.',
         'Developed React/Typescript components and a Django REST Framework API, which enabled features such as bulk purchases, discount codes, and Stripe payments, incorporating both server-side and client-side validation.',
-        'Reduced average debugging time by 50% by enabling breakpoint-debugging of code running inside Docker containers, in both Visual Studio Code and PyCharm.',
+        '●​ Reduced average debugging time by 50% by enabling breakpoint-debugging of code running inside Docker containers, in both Visual Studio Code and PyCharm. ',
+        # 'Reduced average debugging time by 50% by enabling breakpoint-debugging of code running inside Docker containers, in both Visual Studio Code and PyCharm.',
         'Developed the Django/Python/MySQL online news websites and the Django Admin using Django/Jinja templates, HTML, CSS, and Javascript/jQuery.',
         'Led the implementation of Agile/Scrum development, including sprints, retroactives, and JIRA tickets/epics.',
         'Generated $10,000 in weekly ad sales revenue by implementing an HTML5/CSS video ad on our landing page.',
@@ -29,6 +30,7 @@ BULLETS_TO_REDACT = {
     ],
     "test_max_resume.pdf": [
         "Refactored legacy Whatsapp API and expanded internal tooling in Ruby to surface errors, reducing support request volume by 15%.",
+        "Engineered data ingestion pipeline API across microservices using Python and PostgreSQL for B2C loan product, reducing admin maintenance by 80%.",
         "Ideated event timeline internal tool using asynchronous Python, REST APIs and PostgreSQL to reduce support requests by 25%.",
     ]
 }
@@ -43,6 +45,21 @@ BULLETS_BELOW_FIRST_REDACTED = {
     "test_max_resume.pdf": "Led development of RESTful API to fetch real-time message delivery status of Whatsapp outbound marketing campaigns."
 }
 
+TEXT_BELOW_CONSECUTIVE_REDACTED = {
+    "test_arvind_resume.pdf": "The Motley Fool",
+    "test_max_resume.pdf": "CENTER FOR LONG-TERM CYBERSECURITY | Graduate Researcher"
+}
+
+CONSECUTIVE_REDACTED_INDEX = {
+    "test_arvind_resume.pdf": 5,
+    "test_max_resume.pdf": 1
+}
+
+TEXT_BELOW_LAST_REDACTED = {
+    "test_arvind_resume.pdf": "University of Michigan - Ann Arbor, MI",
+    "test_max_resume.pdf": "TD INTERNATIONAL"
+}
+
 
 @pytest.fixture
 def tailor_pdf(request, resume_object):
@@ -54,13 +71,13 @@ def tailor_pdf(request, resume_object):
     if not build_level:
         return tailor_pdf
 
-    unified_resume_doc = tailor_pdf.generate_unified_pdf()
-    tailor_pdf.calculate_spacing(unified_resume_doc)
+    tailor_pdf.generate_unified_pdf()
+    tailor_pdf.calculate_spacing()
 
     if build_level == "CALCULATE_SPACING":
         return tailor_pdf
 
-    tailor_pdf.redact_bullets_from_pdf(unified_resume_doc)
+    tailor_pdf.redact_bullets_from_pdf()
 
     if build_level == "REDACT_BULLETS":
         return tailor_pdf
@@ -73,8 +90,8 @@ class TestTailorPdf:
 
         def test_generates_unified_pdf_with_correct_text(self, tailor_pdf):
             template_resume_doc = pymupdf.open(tailor_pdf.template_resume.file.path)
-            unified_resume_doc = tailor_pdf.generate_unified_pdf()
-            assert fetch_text(template_resume_doc) == fetch_text(unified_resume_doc)
+            tailor_pdf.generate_unified_pdf()
+            assert fetch_text(template_resume_doc) == fetch_text(tailor_pdf.unified_template_page.parent)
 
         def test_generates_unified_pdf_with_correct_dimensions(self, tailor_pdf):
             template_resume_doc = pymupdf.open(tailor_pdf.template_resume.file.path)
@@ -83,8 +100,9 @@ class TestTailorPdf:
                 "page_width": template_resume_doc[0].rect.width,
                 "page_height": template_resume_doc[0].rect.height
             }
-            unified_resume_doc = tailor_pdf.generate_unified_pdf()
-            unified_resume_rect = unified_resume_doc[0].bound()
+            tailor_pdf.generate_unified_pdf()
+            template_page = tailor_pdf.unified_template_page
+            unified_resume_rect = template_page.bound()
             assert unified_resume_rect.width == template_resume_details["page_width"]
             assert unified_resume_rect.height == template_resume_details["pages"] * template_resume_details["page_height"]
 
@@ -114,9 +132,8 @@ class TestTailorPdf:
             template_page = tailor_pdf.unified_template_page
             initial_bullets = [bullet for bullet in tailor_pdf.bullets_to_redact if template_page.search_for(bullet)]
             assert initial_bullets
-            redacted_pdf = tailor_pdf.redact_bullets_from_pdf(template_page.parent)
-            redacted_page = redacted_pdf[0]
-            remaining_bullets = [bullet for bullet in tailor_pdf.bullets_to_redact if redacted_page.search_for(bullet)]
+            tailor_pdf.redact_bullets_from_pdf()
+            remaining_bullets = [bullet for bullet in tailor_pdf.bullets_to_redact if template_page.search_for(bullet)]
             assert not remaining_bullets
 
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
@@ -127,10 +144,10 @@ class TestTailorPdf:
 
         def test_raises_error_when_nothing_is_redacted(self, tailor_pdf):
             tailor_pdf.bullets_to_redact = []
-            unified_resume_doc = tailor_pdf.generate_unified_pdf()
-            tailor_pdf.calculate_spacing(unified_resume_doc)
+            tailor_pdf.generate_unified_pdf()
+            tailor_pdf.calculate_spacing()
             with pytest.raises(ValueError) as empty_bullet_error:
-                tailor_pdf.redact_bullets_from_pdf(unified_resume_doc)
+                tailor_pdf.redact_bullets_from_pdf()
             assert str(empty_bullet_error.value) == "No redactions applied"
 
     class TestFormatPdf:
@@ -162,14 +179,20 @@ class TestTailorPdf:
             assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
 
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
-        def test_bullet_below_two_redacted_offsets_correctly(self, tailor_pdf):
+        def test_bullet_below_consecutive_redacted_offsets_correctly(self, tailor_pdf):
             redacted_page = tailor_pdf.unified_template_page
-            redacted_rect_index = 0
-            first_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index]
-            expected_redacted_rect_offset, expected_redacted_rect_index = first_redacted_rect.height, 1
-            bullet_below_redacted_text = BULLETS_BELOW_FIRST_REDACTED.get(tailor_pdf.template_resume.filename(),
+            redacted_rect_index = CONSECUTIVE_REDACTED_INDEX.get(tailor_pdf.template_resume.filename(), None)
+            first_consecutive_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index]
+            second_consecutive_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index+1]
+            combined_distance = second_consecutive_redacted_rect.y1 - first_consecutive_redacted_rect.y0
+            expected_redacted_rect_offset, expected_redacted_rect_index = combined_distance, redacted_rect_index+2
+
+            # There is no line break spacing between our redacted_rect bullets
+            assert first_consecutive_redacted_rect.height + second_consecutive_redacted_rect.height == combined_distance
+
+            text_below_redacted_text = TEXT_BELOW_CONSECUTIVE_REDACTED.get(tailor_pdf.template_resume.filename(),
                                                                                 None)
-            below_rect = tailor_pdf._combine_rects(redacted_page.search_for(bullet_below_redacted_text))
+            below_rect = tailor_pdf._combine_rects(redacted_page.search_for(text_below_redacted_text))
             redacted_offset, redacted_index = tailor_pdf.calculate_text_rect_offset(redacted_rect_index,
                                                                                     below_rect)
             assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
@@ -177,12 +200,12 @@ class TestTailorPdf:
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_when_we_reach_the_end_of_our_redacted_list_while_offsetting(self, tailor_pdf):
             redacted_page = tailor_pdf.unified_template_page
-            redacted_rect_index = 0
-            first_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index]
-            expected_redacted_rect_offset, expected_redacted_rect_index = first_redacted_rect.height, 1
-            bullet_below_first_redacted_text = BULLETS_BELOW_FIRST_REDACTED.get(tailor_pdf.template_resume.filename(),
+            redacted_rect_index = len(tailor_pdf.redacted_rects) - 1
+            last_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index]
+            expected_redacted_rect_offset, expected_redacted_rect_index = last_redacted_rect.height, redacted_rect_index + 1
+            bullet_below_last_redacted_text = TEXT_BELOW_LAST_REDACTED.get(tailor_pdf.template_resume.filename(),
                                                                                 None)
-            below_rect = tailor_pdf._combine_rects(redacted_page.search_for(bullet_below_first_redacted_text))
+            below_rect = tailor_pdf._combine_rects(redacted_page.search_for(bullet_below_last_redacted_text))
             redacted_offset, redacted_index = tailor_pdf.calculate_text_rect_offset(redacted_rect_index,
                                                                                     below_rect)
             assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
