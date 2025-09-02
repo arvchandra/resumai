@@ -103,7 +103,7 @@ class TailorPdf:
 
         data structure:
 
-        columns_data :{
+        column_data :{
             cluster_id: {
                 rect: [],
                 offset: 0
