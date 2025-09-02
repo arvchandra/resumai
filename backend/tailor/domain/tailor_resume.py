@@ -3,9 +3,11 @@ from sklearn.cluster import DBSCAN
 from collections import defaultdict
 import pymupdf
 
+
 class TailorPdf:
     def __init__(self, template_resume, bullets_to_redact):
         self.template_resume = template_resume
+        self.tailored_resume = None
         self.bullets_to_redact = bullets_to_redact
         self.template_pdf_details = {
             "page_count": 0,
@@ -17,7 +19,7 @@ class TailorPdf:
         self.column_data = {}
         self.page_break_rects = []
 
-    def tailor_pdf_in_bytes(self):
+    def create_tailored_resume(self):
         try:
             self.generate_unified_pdf()
             self.calculate_spacing()
@@ -25,9 +27,8 @@ class TailorPdf:
 
             tailored_pdf_unified = self.format_tailored_pdf_unified()
 
-            tailored_resume = self.split_unified_pdf(tailored_pdf_unified)
-            tailored_resume_in_bytes = tailored_resume.tobytes()
-            return tailored_resume_in_bytes
+            self.tailored_resume = self.split_unified_pdf(tailored_pdf_unified)
+            return
         except Exception as e:
             print(f"error: {e}")
             return None
@@ -306,6 +307,10 @@ class TailorPdf:
 
             # TODO account for self.page_break_rects
             repositioned_text_rect = self._get_rect(text_block, text_offset)
+
+            if self.out_of_bounds(repositioned_text_rect):
+                raise ValueError("Should not get a rect position that is outside our unified pdf")
+
             interim_pdf_unified = self.isolate_repositioned_rect(repositioned_text_rect, redacted_page.parent, text_rect)
 
             tailored_page_unified.show_pdf_page(
@@ -440,8 +445,36 @@ class TailorPdf:
         """
         Splits our unified PDF into the number of pages found on our original template PDF
         """
+        page_count, page_width, page_height = self.template_pdf_details.values()
 
-        return self.template_resume.file
+        tailored_resume = pymupdf.open()
+        for page_number in range(0, page_count):
+            page_offset_height = page_height * page_number
+            unified_page_rect = pymupdf.Rect(
+                0,
+                0 + page_offset_height,
+                page_width,
+                page_height + page_offset_height
+            )
+
+            # Don't add page if no text present
+            text_on_page = unified_pdf[0].get_textbox(unified_page_rect)
+            if not text_on_page.strip():
+                continue
+
+            resume_page = tailored_resume.new_page(
+                -1,
+                width=page_width,
+                height=page_height
+            )
+
+            resume_page.show_pdf_page(
+                resume_page.rect,
+                unified_pdf,
+                clip=unified_page_rect
+            )
+
+        return tailored_resume
 
     def out_of_bounds(self, rect):
         return not self.unified_template_page.rect.contains(rect)
@@ -498,3 +531,6 @@ class TailorPdf:
             raise ValueError("Unable to generate a valid combined rect")
 
         return combined_rect
+
+    def tailor_pdf_in_bytes(self):
+        return self.tailored_resume.tobytes()
