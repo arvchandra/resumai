@@ -59,6 +59,14 @@ TEXT_BELOW_LAST_REDACTED = {
     "test_max_resume.pdf": "TD INTERNATIONAL"
 }
 
+TEXT_BELOW_REDACTED_SEPARATE_COLUMN = {
+    "test_max_resume.pdf": "Weber, Nagamine, Ingraham-Rakatansky. Presented at GigaNet, Nov. 2020, Katowice, Poland.",
+}
+
+REDACTED_TEXT_IN_SEPARATE_COLUMN = {
+    "test_max_resume.pdf": "AWS/Python Civic Chatbot"
+}
+
 
 @pytest.fixture
 def tailor_pdf(request, resume_object):
@@ -118,8 +126,8 @@ class TestTailorPdf:
     class TestCalculateSpacing:
         @pytest.mark.parametrize("tailor_pdf", ["CALCULATE_SPACING"], indirect=True)
         def test_calculates_the_correct_number_of_columns(self, tailor_pdf):
-            assert len(tailor_pdf.column_rects) == EXPECTED_COLUMNS.get(tailor_pdf.template_resume.filename(), None)
-            assert all([column["offset"] == 0 for column in tailor_pdf.column_rects.values()])
+            assert len(tailor_pdf.column_data) == EXPECTED_COLUMNS.get(tailor_pdf.template_resume.filename(), None)
+            assert all([column["offset"] == 0 for column in tailor_pdf.column_data.values()])
 
         @pytest.mark.parametrize("tailor_pdf", ["CALCULATE_SPACING"], indirect=True)
         def test_calculate_the_correct_number_of_page_breaks(self, tailor_pdf):
@@ -139,7 +147,7 @@ class TestTailorPdf:
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_redacted_borders_are_formatted_correctly(self, tailor_pdf):
             redacted_rect_borders = [(rect.x0, rect.x1) for rect in tailor_pdf.redacted_rects]
-            expected_borders = [(column["rect"].x0, column["rect"].x1) for column in tailor_pdf.column_rects.values()]
+            expected_borders = [(column["rect"].x0, column["rect"].x1) for column in tailor_pdf.column_data.values()]
             assert all([rect_boarders in expected_borders for rect_boarders in redacted_rect_borders])
 
         def test_raises_error_when_nothing_is_redacted(self, tailor_pdf):
@@ -166,7 +174,7 @@ class TestTailorPdf:
 
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_bullet_below_redacted_offsets_correctly(self, tailor_pdf):
-            redacted_page, redacted_rect_index = tailor_pdf.unified_template_page,  0
+            redacted_page, redacted_rect_index = tailor_pdf.unified_template_page, 0
             first_redacted_rect = tailor_pdf.redacted_rects[redacted_rect_index]
             expected_redacted_rect_offset, expected_redacted_rect_index = first_redacted_rect.height, 1
 
@@ -177,11 +185,50 @@ class TestTailorPdf:
             assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
 
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
+        def test_text_below_redacted_in_separate_column_doesnt_offset(self, tailor_pdf):
+            # pass if single column resume
+            if len(tailor_pdf.column_data) == 1:
+                return True
+
+            redacted_page, redacted_rect_index = tailor_pdf.unified_template_page, 0
+            expected_redacted_rect_offset = expected_redacted_rect_index = 0
+
+            text_in_separate_column = TEXT_BELOW_REDACTED_SEPARATE_COLUMN.get(tailor_pdf.template_resume.filename())
+            below_rect = tailor_pdf._combine_rects(redacted_page.search_for(text_in_separate_column))
+            redacted_offset, redacted_index = tailor_pdf.calculate_text_rect_offset(redacted_rect_index,
+                                                                                    below_rect)
+            assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
+            assert all([column["offset"] == 0 for column in tailor_pdf.column_data.values()])
+
+        @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_bullet_below_consecutive_redacted_offsets_correctly(self, tailor_pdf):
             redacted_page = tailor_pdf.unified_template_page
             redacted_rect_index = CONSECUTIVE_REDACTED_INDEX.get(tailor_pdf.template_resume.filename())
             combined_distance = tailor_pdf.redacted_rects[redacted_rect_index+1].y1 - tailor_pdf.redacted_rects[redacted_rect_index].y0
             expected_redacted_rect_offset, expected_redacted_rect_index = combined_distance, redacted_rect_index+2
+
+            text_below_redacted_text = TEXT_BELOW_CONSECUTIVE_REDACTED.get(tailor_pdf.template_resume.filename())
+            below_rect = tailor_pdf._combine_rects(redacted_page.search_for(text_below_redacted_text))
+            redacted_offset, redacted_index = tailor_pdf.calculate_text_rect_offset(redacted_rect_index,
+                                                                                    below_rect)
+            assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
+
+        @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
+        def test_text_below_consecutive_redacted_in_separate_columns_offsets_first_only(self, tailor_pdf):
+            # pass if single column resume
+            if len(tailor_pdf.column_data) == 1:
+                return True
+
+            # add extra redacted rect in separate column
+            redacted_page = tailor_pdf.unified_template_page
+            separate_column_redacted_text = REDACTED_TEXT_IN_SEPARATE_COLUMN.get(tailor_pdf.template_resume.filename())
+            separate_column_redacted_blocks = redacted_page.search_for(separate_column_redacted_text)
+            separate_redacted_rect = tailor_pdf._combine_rects(separate_column_redacted_blocks)
+            tailor_pdf.redacted_rects.append(separate_redacted_rect)
+
+            redacted_rect_index = len(tailor_pdf.redacted_rects) - 2
+            first_column_redacted_height = tailor_pdf.redacted_rects[redacted_rect_index].height
+            expected_redacted_rect_offset, expected_redacted_rect_index = first_column_redacted_height, redacted_rect_index + 1
 
             text_below_redacted_text = TEXT_BELOW_CONSECUTIVE_REDACTED.get(tailor_pdf.template_resume.filename())
             below_rect = tailor_pdf._combine_rects(redacted_page.search_for(text_below_redacted_text))
