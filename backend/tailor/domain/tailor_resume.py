@@ -1,6 +1,3 @@
-import io
-import tempfile
-
 import numpy as np
 from sklearn.cluster import DBSCAN
 from collections import defaultdict
