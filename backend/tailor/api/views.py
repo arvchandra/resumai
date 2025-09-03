@@ -19,8 +19,8 @@ class UserResumeListView(ListAPIView):
     serializer_class = ResumeSerializer
 
     def get_queryset(self):
-        user_id = self.kwargs["user_id"]
-        return Resume.objects.filter(user__id=user_id)
+        user = self.request.user
+        return Resume.objects.filter(user=user)
 
 
 class UserResumeUploadView(APIView):
@@ -32,7 +32,7 @@ class UserResumeUploadView(APIView):
     if the upload was successful.
 
     Example request:
-        POST /tailor/users/<int:user_id>/resume/upload/
+        POST /tailor/resume/upload/
         Content-Type: multipart/form-data
         Body:
             file: <uploaded_file>
@@ -45,7 +45,7 @@ class UserResumeUploadView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = FileUploadSerializer(data=request.data)
         if serializer.is_valid():
-            user_id = self.kwargs["user_id"]
+            user = self.request.user
             uploaded_file = serializer.validated_data["file"]
 
             # Get the file type (uppercase file extension)
@@ -57,7 +57,7 @@ class UserResumeUploadView(APIView):
             new_resume_upload.name = uploaded_file.name
             new_resume_upload.file = uploaded_file
             new_resume_upload.file_type = file_type
-            new_resume_upload.user = User.objects.get(id=user_id)  # TODO: Get user from auth
+            new_resume_upload.user = User.objects.get(id=user.id)
             new_resume_upload.save()
 
             resume_serializer = ResumeSerializer(new_resume_upload)
@@ -75,16 +75,17 @@ class TailoredResumeListView(ListAPIView):
     serializer_class = TailoredResumeSerializer
 
     def get_queryset(self):
-        user_id = self.kwargs["user_id"]
-        return TailoredResume.objects.filter(user__id=user_id).order_by('-created_at')
+        user = self.request.user
+        return TailoredResume.objects.filter(user=user).order_by('-created_at')
 
 
 class TailoredResumeDownloadView(APIView):
     def get(self, request, *args, **kwargs):
-        tailored_resume_id, user_id = self.kwargs["tailored_resume_id"], self.kwargs["user_id"]
+        user = self.request.user
+        tailored_resume_id = self.kwargs["tailored_resume_id"]
 
         try:
-            tailored_resume = TailoredResume.objects.get(pk=tailored_resume_id, user_id=user_id)
+            tailored_resume = TailoredResume.objects.get(pk=tailored_resume_id, user=user)
 
             return FileResponse(tailored_resume.file.open(), 'rb', as_attachment=True)
         except TailoredResume.DoesNotExist:
@@ -117,7 +118,7 @@ class TailorResumeView(APIView):
     - Responds with the TailoredResume id if the process was successful.
 
     Example request:
-        POST /tailor/users/<int:user_id>/tailor-resume
+        POST /tailor/tailor-resume
         Content-Type: application/json
         Body:
             {
@@ -131,16 +132,13 @@ class TailorResumeView(APIView):
     """
 
     def post(self, request, *args, **kwargs):
-        user_id: int = int(self.kwargs["user_id"])
+        user = self.request.user
         resume_id: int = int(request.data["resume_id"])
         job_posting_url: str = request.data["job_posting_url"]
 
-        # Validate that logged in user matches the user referenced in the request URL
-        # TODO: request.user.id == user_id  (must implement user login/auth first)
-
         try:
             tailored_resume = TailoredResume.objects.create_from_params(
-                user_id=user_id,
+                user_id=user.id,
                 resume_id=resume_id,
                 job_posting_url=job_posting_url
             )
