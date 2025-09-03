@@ -13,5 +13,4 @@ class IsOwner(BasePermission):
             return url_user_id == request.user.id
         else:
             return True
-
         
