@@ -309,10 +309,7 @@ class TestTailorPdf:
         @pytest.mark.parametrize("resume_object", ["test_arvind_resume_extra_page.pdf"], indirect=True)
         def test_splits_unified_pdf_doesnt_include_empty_page(self, resume_object):
             bullets_to_redact = [
-                "Led the rebuild of a complex Customer Survey application – designed the database schema, Django REST API, React/Typescript components, and unit/E2E tests for backend and frontend.",
-                "Led CMS development for high-traffic rankings platforms Cars, Travel, and Real Estate using Django and PostgreSQL.",
-                "Built and maintained an efficient Python ETL pipeline processing millions of vehicle listings — generated $400K+ in annual revenue; built custom dashboards and email alerts to monitor the ETL process.",
-                "Communicated with editors to identify inefficient processes - led to automating web scraping workflows that reduced data prep time for our editors from 5 days to 2 hours.",
+               "WORK AUTHORIZATION U.S. Citizen",
             ]
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
             tailor_pdf.create_tailored_resume()
