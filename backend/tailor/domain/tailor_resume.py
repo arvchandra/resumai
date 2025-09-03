@@ -303,8 +303,8 @@ class TailorPdf:
 
                 column = self.column_data[column_id]
                 current_column_offset = column["offset"]
+
                 text_rect_with_redacted_offset = self._get_rect(text_block, current_column_offset + redacted_offset)
-                # TODO account for self.page_break_rects
                 page_break_offset = self.maybe_correct_for_page_break(text_rect_with_redacted_offset)
 
                 corrected_offset = redacted_offset - page_break_offset
@@ -390,17 +390,18 @@ class TailorPdf:
     def maybe_correct_for_page_break(self, rect: pymupdf.Rect):
         """
         Here are the rules:
-        1. If it is not intersecting with the top or bottom then return 0 and continue as normal
-        2. If the bottom of the rect is intersecting with the top of the page break:
+        1. If it is not intersecting with any page break then return 0 and continue as normal
+        2. If only the bottom of the rect is intersecting with the top of the page break:
             break text_block into overlapping lines
-            shunt overlapping lines down below the page break
-            reduce final offset by non-overlap amount (page_break + (page_break.y0- rect.y0))
-        3. If the top of the rect is intersecting with the bottom of the page break:
-            shunt overlapping lines down below the page break
-            reduce final offset by overlap amount (page_break.y1- rect.y0)
-            # TODO For scenario 2: right now we are shunting down the entire text_block and are not accounting for when only one line
-            # TODO future versions should consider identifying only the offending line that is over the line and then splitting that line
-            # TODO and offseting by only that much
+            we need to move the rect down by the height of the page break, plus the height of the rect
+            not currently overlapping (since it will be sticking up into the page break once we move it down)
+            return page_break + non-overlap amount (page_break.y0 - rect.y0))
+        3. Otherwise the top or the entire rect is intersecting with the bottom of the page break:
+            we need to move the rect down by the bottom of the page break
+            return overlap amount (page_break.y1- rect.y0)
+
+            # TODO For scenario 2: right now we are shunting down the entire text_block even if its only one line over
+            # TODO future versions should consider splitting off the offending line and offseting by only that much
         """
         overlapping_page_break = None
         for page_break in self.page_break_rects:
@@ -415,7 +416,7 @@ class TailorPdf:
         if rect.y0 < overlapping_page_break.y0:
             distance_from_top_of_rect_to_top_of_footer = overlapping_page_break.y0 - rect.y0
             return overlapping_page_break.height + distance_from_top_of_rect_to_top_of_footer
-        else: # top of rect overlapping header
+        else: # top of rect overlapping header or entire rect in page_break
             distance_from_top_of_rect_to_bottom_of_header = overlapping_page_break.y1 - rect.y0
             return distance_from_top_of_rect_to_bottom_of_header
 
@@ -474,8 +475,6 @@ class TailorPdf:
                 rect_below_repositioned_rect
         ):
             interim_page_unified.add_redact_annot(redact_rect)
-            # annot.clean_contents()
-
 
         interim_page_unified.apply_redactions()
         interim_page_unified.clean_contents()
@@ -514,8 +513,6 @@ class TailorPdf:
                 unified_pdf,
                 clip=unified_page_rect
             )
-
-            # resume_page.clean_contents()
 
         return tailored_resume
 
