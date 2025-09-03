@@ -158,9 +158,6 @@ class TestTailorPdf:
                 tailor_pdf.redact_bullets_from_pdf()
             assert str(empty_bullet_error.value) == "No redactions applied"
 
-    class TestFormatPdf:
-        pass
-
     class TestTextRectOffset:
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_bullet_above_rect_not_changed(self, tailor_pdf):
@@ -248,6 +245,29 @@ class TestTailorPdf:
                                                                                     below_rect)
             assert (redacted_offset, redacted_index) == (expected_redacted_rect_offset, expected_redacted_rect_index)
 
+        @pytest.mark.parametrize("tailor_pdf", ["CALCULATE_SPACING"], indirect=True)
+        def test_text_rect_overlaps_with_top_of_page_break(self, tailor_pdf):
+            if not tailor_pdf.page_break_rects:
+                return True
+
+            first_page_break = tailor_pdf.page_break_rects[0]
+            top_of_page_break = first_page_break.y0
+            rect_partially_overlapping_page_break = pymupdf.Rect(0, top_of_page_break-10, first_page_break.x1, top_of_page_break+2)
+            expected_offset = first_page_break.height + 10
+            assert tailor_pdf.maybe_correct_for_page_break(rect_partially_overlapping_page_break) == expected_offset
+
+        @pytest.mark.parametrize("tailor_pdf", ["CALCULATE_SPACING"], indirect=True)
+        def test_text_rect_overlaps_with_bottom_of_page_break(self, tailor_pdf):
+            if not tailor_pdf.page_break_rects:
+                return True
+
+            first_page_break = tailor_pdf.page_break_rects[0]
+            bottom_of_page_break = first_page_break.y1
+            rect_partially_overlapping_page_break = pymupdf.Rect(0, bottom_of_page_break - 2, first_page_break.x1,
+                                                                 bottom_of_page_break + 10)
+            expected_offset = 2
+            assert tailor_pdf.maybe_correct_for_page_break(rect_partially_overlapping_page_break) == expected_offset
+
         @pytest.mark.parametrize("tailor_pdf", ["REDACT_BULLETS"], indirect=True)
         def test_no_redacted_rects(self, tailor_pdf):
             tailor_pdf.redacted_rects = []
@@ -286,7 +306,24 @@ class TestTailorPdf:
             assert isolated_pdf[0].get_textbox(isolated_pdf_rect) == redacted_page.get_textbox(first_text_rect)
 
     class TestSplitPdf:
-        pass
+        @pytest.mark.parametrize("resume_object", ["test_arvind_resume_extra_page.pdf"], indirect=True)
+        def test_splits_unified_pdf_doesnt_include_empty_page(self, resume_object):
+            bullets_to_redact = [
+               "WORK AUTHORIZATION U.S. Citizen",
+            ]
+            tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
+            tailor_pdf.create_tailored_resume()
+            tailored_resume = tailor_pdf.tailored_resume
+            assert tailored_resume.page_count == tailor_pdf.template_pdf_details["page_count"] - 1
+
+    class TestCreateTailoredResume:
+        def test_can_create_tailored_resume(self, tailor_pdf):
+            tailor_pdf.create_tailored_resume()
+            tailored_resume = tailor_pdf.tailored_resume
+            expected_page_count, expected_page_width, expected_page_height = tailor_pdf.template_pdf_details.values()
+            expected_page_rect = pymupdf.Rect((0, 0), (expected_page_width, expected_page_height))
+            assert tailored_resume.page_count == expected_page_count
+            assert all([page.rect == expected_page_rect for page in tailored_resume])
 
     class TestGetRect:
         def test_successfully_creates_rect_from_sequence(self, tailor_pdf):
