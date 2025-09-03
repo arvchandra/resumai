@@ -9,27 +9,27 @@ from tailor.api.views import (
 
 urlpatterns = [
     path(
-        "users/<int:user_id>/resumes/",
+        "resumes/",
         UserResumeListView.as_view(),
         name="user-resumes",
     ),
     path(
-        "users/<int:user_id>/resumes/upload/",
+        "resumes/upload/",
         UserResumeUploadView.as_view(),
         name="user-resume-upload",
     ),
     path(
-        "users/<int:user_id>/tailor-resume/",
+        "tailor-resume/",
         TailorResumeView.as_view(),
         name="tailor-resume",
     ),
     path(
-        "users/<int:user_id>/tailored-resumes/",
+        "tailored-resumes/",
         TailoredResumeListView.as_view(),
         name="tailored-resumes",
     ),
     path(
-        "users/<int:user_id>/tailored-resume/<int:tailored_resume_id>/download/",
+        "tailored-resume/<int:tailored_resume_id>/download/",
         TailoredResumeDownloadView.as_view(),
         name="tailored-resume-download",
     ),
