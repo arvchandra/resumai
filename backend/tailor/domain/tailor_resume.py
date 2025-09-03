@@ -14,18 +14,16 @@ class TailorPdf:
         }
         self.unified_template_page = None
         self.redacted_rects = []
-        self.column_rects = []
+        self.column_data = {}
         self.page_break_rects = []
 
     def tailor_pdf_in_bytes(self):
         try:
-            template_pdf_unified = self.generate_unified_pdf()
+            self.generate_unified_pdf()
+            self.calculate_spacing()
+            self.redact_bullets_from_pdf()
 
-            self.calculate_spacing(template_pdf_unified)
-
-            redacted_pdf_unified = self.redact_bullets_from_pdf(template_pdf_unified)
-
-            tailored_pdf_unified = self.format_tailored_pdf_unified(redacted_pdf_unified)
+            tailored_pdf_unified = self.format_tailored_pdf_unified()
 
             tailored_resume = self.split_unified_pdf(tailored_pdf_unified)
             tailored_resume_in_bytes = tailored_resume.tobytes()
@@ -81,18 +79,19 @@ class TailorPdf:
             unified_template_page.show_pdf_page(location_on_unified_pdf, template_pdf, page.number)
 
         self.unified_template_page = unified_template_page
-        return unified_template_pdf
+        return
 
-    def calculate_spacing(self, template_pdf_unified: pymupdf.Document):
-        self.column_rects = self.calculate_column_rects(template_pdf_unified[0])
+    def calculate_spacing(self):
+        template_page = self.unified_template_page
+        self.column_data = self.calculate_column_data(template_page)
+        self.page_break_rects = self.calculate_page_break_spacing(template_page)
+        return
 
-        self.page_break_rects = self.calculate_page_break_spacing(template_pdf_unified[0])
-
-    def calculate_column_rects(self, template_page_unified: pymupdf.Page):
+    def calculate_column_data(self, template_page_unified: pymupdf.Page):
         """
-        returns a list of rects of the identified columns in the document using the DBSCAN clustering method.
-        DBSCAN will take our array, in this case the horizontal(X coordinate) bounds of each text block in the resume,
-        and identify clusters of similarly grouped bounds. If a text block is not grouped, then it will be given
+        returns a dictionary of identified columns in the document using the DBSCAN clustering method.
+        DBSCAN will take an array, in this case the horizontal(X coordinate) bounds of each text block in the resume,
+        and identify groups of clusters. If a text block is not grouped, then it will be given
         a cluster label of -1. Sorting our text blocks by cluster label, we will then create a rect that encapsulates
         all the text blocks for a given cluster rect. This will allow us to identify later if a bullet we
         are redacting/repositioning is in a column that should be offset.
@@ -100,6 +99,17 @@ class TailorPdf:
         see: https://inria.hal.science/hal-04668648/document
              https://github.com/pymupdf/PyMuPDF/discussions/2259
              https://medium.com/@sachinsoni600517/clustering-like-a-pro-a-beginners-guide-to-dbscan-6c8274c362c4
+
+
+        data structure:
+
+        column_data :{
+            cluster_id: {
+                rect: [],
+                offset: 0
+            },
+            ...
+        }
 
         TODO: Determine if we need to worry about footer text in resumes; if not, extend column rects to floor
         TODO: Determine if we should calculate column spacing for each page
@@ -114,23 +124,27 @@ class TailorPdf:
         dbscan.fit(X)
         cluster_labels = dbscan.labels_
 
+        # using defaultdict so we don't check need to check for the key when appending
         column_clusters = defaultdict(list)
         for i in range(len(text_blocks)):
             text_block, text_block_cluster_no = text_blocks[i], cluster_labels[i]
             column_clusters[text_block_cluster_no].append(text_block)
 
-        column_rects = []
+        column_data = {}
         for column_cluster_no, column_cluster_blocks in column_clusters.items():
             if column_cluster_no == -1:  # skip outliers
                 continue
 
-            column_rects.append(self._combine_rects(column_cluster_blocks))
+            column_data[column_cluster_no] = {
+                "rect": self._combine_rects(column_cluster_blocks),
+                "offset": 0
+            }
 
         # include entire page dimensions if only one column
-        if len(column_rects) == 1:
-            column_rects[0] = self.unified_template_page.rect
+        if len(column_data) == 1:
+            column_data[0]["rect"] = self.unified_template_page.rect
 
-        return column_rects
+        return column_data
 
     def calculate_page_break_spacing(self, template_page_unified: pymupdf.Page):
         """
@@ -175,12 +189,12 @@ class TailorPdf:
 
         return page_break_rects
 
-    def redact_bullets_from_pdf(self, template_pdf: pymupdf.Document):
+    def redact_bullets_from_pdf(self):
         """
         Identifies where in the page our bullets are that we want to delete, saves the location of where they were
         as a Rect (including the line break spacing between them and the next bullet point), and then redacts them
         """
-        template_page = template_pdf[0]
+        template_page = self.unified_template_page
 
         for bullet in self.bullets_to_redact:
             rects_containing_bullet = template_page.search_for(bullet)
@@ -196,16 +210,17 @@ class TailorPdf:
             template_page.add_redact_annot(redacted_rect)
 
         # TODO remove once OpenAI Response is correctly sorting the bullet points
+        # TODO account for column
         self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
 
         result = template_page.apply_redactions()
         if not result:
             raise ValueError("No redactions applied")
-
-        return template_pdf
+        return
 
     def format_redacted_rect(self, redacted_rect: pymupdf.Rect):
         self.fit_borders_to_column(redacted_rect)
+        self.maybe_fit_height_to_bullet(redacted_rect)
         self.maybe_add_line_break(redacted_rect)
 
     def fit_borders_to_column(self, redacted_rect: pymupdf.Rect):
@@ -213,13 +228,29 @@ class TailorPdf:
         This will extend the X borders of our rect to either the column that it is located in, or to
         the width of the page if there is only one column. This will account for bullet symbols (e.g. "-") and \n
         """
-        for column in self.column_rects:
-            if column.contains(redacted_rect):
-                redacted_rect.x0 = column.x0
-                redacted_rect.x1 = column.x1
-                return
+
+        column_id = self._get_column_id(redacted_rect)
+        if column_id is not None:
+            redacted_rect.x0 = self.column_data[column_id]["rect"].x0
+            redacted_rect.x1 = self.column_data[column_id]["rect"].x1
+            return
 
         raise ValueError("Unable to find rect in column")
+
+    def maybe_fit_height_to_bullet(self, redacted_rect):
+        """
+        It's possible that the bullet symbol to the left of our text has a rect that is slightly above or
+        below our text rect, which will affect the drift of repositioning on the page unless addressed.
+        Now that's we've extended our rect borders to the width, we should be able to capture any bullet symbols
+        with get_textbox and reconfigure the height
+
+        TODO make sure this doesn't break with two-column spacing
+        """
+        text_including_bullet = self.unified_template_page.get_textbox(redacted_rect)
+        text_including_bullet_rect = self._combine_rects(self.unified_template_page.search_for(text_including_bullet))
+
+        redacted_rect.y0 = min(redacted_rect.y0, text_including_bullet_rect.y0)
+        redacted_rect.y1 = max(redacted_rect.y1, text_including_bullet_rect.y1)
 
     def maybe_add_line_break(self, redacted_rect: pymupdf.Rect):
         """
@@ -246,16 +277,164 @@ class TailorPdf:
 
         # stretch the bottom of our redacted rect to just above our text_rect to include line break spacing
         if nearest_rect_containing_text and not nearest_rect_containing_text.intersects(redacted_rect):
-            redacted_rect.y1 = nearest_rect_containing_text.y0 - 0.000001
+            redacted_rect.y1 = nearest_rect_containing_text.y0
 
         return
 
-    def format_tailored_pdf_unified(self, redacted_pdf: pymupdf.Document):
+    def format_tailored_pdf_unified(self):
         """
         This function repositions the remaining text on our redacted pdf onto a new pdf using the location of our
         redacted rects to determine how much we are moving the repositioned text up by.
         """
-        pass
+        redacted_page = self.unified_template_page
+
+        tailored_pdf_unified = self._generate_unified_pdf()
+        tailored_page_unified = tailored_pdf_unified[0]
+
+        redacted_rect_index = 0
+        for text_block in redacted_page.get_text("blocks"):
+            text_rect = self._get_rect(text_block)
+
+            text_offset = 0
+            column_id = self._get_column_id(text_rect)
+            if column_id is not None:
+                column_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
+
+                column = self.column_data[column_id]
+                column["offset"] += column_offset
+                text_offset = column["offset"]
+
+            # TODO account for self.page_break_rects
+            repositioned_text_rect = self._get_rect(text_block, text_offset)
+            interim_pdf_unified = self.isolate_repositioned_rect(repositioned_text_rect, redacted_page.parent, text_rect)
+
+            tailored_page_unified.show_pdf_page(
+                repositioned_text_rect,
+                interim_pdf_unified,
+                clip=repositioned_text_rect
+            )
+
+            interim_pdf_unified.close()
+
+        return tailored_pdf_unified
+
+    def calculate_text_rect_offset(self, redacted_rect_index: int, text_block_rect: pymupdf.Rect):
+        """
+        Here we calculate if the text_block_rect we are evaluating is below the redacted_rect located at our index.
+        If it is, then text_block_rect is the next available text_block after our redactions, which means that we could
+        have jumped over multiple redactions to get there.
+        Example:
+        Page before redaction
+        - A
+        - B
+        - C
+        - D
+        Page after redaction
+        - A
+             <- B has been redacted
+             <- C has been redacted
+        - D  <- needs to be repositioned on the new pdf by the height of B + C
+        Tailored PDF
+        - A
+        - D
+        This means we need to keep stepping along our redacted_rect list until our text_block_rect is no longer
+        below a redacted_rect or we have run through all of our redacted_rects
+        """
+        # return early if reached the end of redacted rect list
+        if not self.redacted_rects or redacted_rect_index >= len(self.redacted_rects):
+            return 0, redacted_rect_index
+
+        redacted_rect = self.redacted_rects[redacted_rect_index]
+        text_column, redacted_column = self._get_column_id(text_block_rect), self._get_column_id(redacted_rect)
+
+        # return if columns are not aligned
+        if text_column != redacted_column:
+            return 0, redacted_rect_index
+
+        # return if the bottom of the text block rect is above the current redacted rect
+        if text_block_rect.y1 <= redacted_rect.y0:
+            return 0, redacted_rect_index
+
+        redacted_offset = 0
+        current_redacted_rect_index = redacted_rect_index
+        # we add the y distance between the top and bottom of our redacted rect before progressing
+        # to the next one, repeating as long as our current text block is below a redacted rect in the same column
+        while text_block_rect.y0 >= self.redacted_rects[current_redacted_rect_index].y1:
+
+            redacted_offset += self.redacted_rects[current_redacted_rect_index].height
+            current_redacted_rect_index += 1
+
+            # terminates early if we get to the end of our list
+            if current_redacted_rect_index == len(self.redacted_rects):
+                break
+
+            # terminates if columns no longer match
+            next_redacted_rect = self.redacted_rects[current_redacted_rect_index]
+            redacted_column = self._get_column_id(next_redacted_rect)
+            if text_column != redacted_column:
+                break
+
+        return redacted_offset, current_redacted_rect_index
+
+    def isolate_repositioned_rect(self, repositioned_rect, redacted_pdf, template_rect):
+        """
+        This function takes our repositioned text block from the template resume and copies that Rect onto a
+        temporary PDF. Because pymupdf's show_pdf_page will also copy all text, links, and annotations on the page,
+        not just the text inside the Rect (See: https://pymupdf.readthedocs.io/en/latest/page.html#Page.show_pdf_page)
+        we need to annotate all the space around our repositioned text block and redact it to remove all extraneous
+        text/links. We then return the temporary PDF page with only the text block.
+        """
+        interim_pdf_unified = self._generate_unified_pdf()
+        interim_page_unified = interim_pdf_unified[0]
+
+        interim_page_unified.show_pdf_page(
+            repositioned_rect,
+            redacted_pdf,
+            clip=template_rect
+        )
+
+        page_rect = interim_page_unified.rect
+
+        # redact everything else by creating four Rects around our rect and redacting everything around it
+        rect_above_repositioned_rect = self._get_rect([
+            page_rect.x0,  # Leftmost part of Page
+            page_rect.y0,  # Top of Page
+            page_rect.x1,  # Rightmost part of Page
+            repositioned_rect.y0  # Top of repositioned rect
+        ])
+
+        rect_left_of_repositioned_rect = self._get_rect([
+            page_rect.x0,  # Leftmost part of Page
+            repositioned_rect.y0,  # Top of repositioned rect
+            repositioned_rect.x0,  # Leftmost part of repositioned rect
+            repositioned_rect.y1  # Bottom of repositioned rect
+        ])
+
+        rect_right_of_repositioned_rect = self._get_rect([
+            repositioned_rect.x1,  # Rightmost part of repositioned rect
+            repositioned_rect.y0,  # Top of repositioned rect
+            page_rect.x1,  # Rightmost part of Page
+            repositioned_rect.y1  # Bottom of repositioned rect
+        ])
+
+        rect_below_repositioned_rect = self._get_rect([
+            page_rect.x0,  # Leftmost part of Page
+            repositioned_rect.y1,  # Bottom of repositioned rect
+            page_rect.x1,  # Rightmost part of Page
+            page_rect.y1  # Bottom of page
+        ])
+
+        for redact_rect in (
+                rect_above_repositioned_rect,
+                rect_left_of_repositioned_rect,
+                rect_right_of_repositioned_rect,
+                rect_below_repositioned_rect
+        ):
+            interim_page_unified.add_redact_annot(redact_rect)
+
+        interim_page_unified.apply_redactions()
+        interim_pdf_unified.reload_page(interim_page_unified)
+        return interim_pdf_unified
 
     def split_unified_pdf(self, unified_pdf):
         """
@@ -272,6 +451,17 @@ class TailorPdf:
         new_pdf = pymupdf.open()
         new_pdf.new_page(width=page_width, height=page_height * page_count)
         return new_pdf
+
+    def _get_column_id(self, rect: pymupdf.Rect):
+        column_id = None
+
+        for col_id, column in self.column_data.items():
+            if column["rect"].contains(rect):
+                column_id = col_id
+                break
+
+        #TODO raise error or None if found in all
+        return column_id
 
     @staticmethod
     def _get_rect(block, offset=0):
