@@ -135,9 +135,6 @@ class TailorResumeView(APIView):
         resume_id: int = int(request.data["resume_id"])
         job_posting_url: str = request.data["job_posting_url"]
 
-        # Validate that logged in user matches the user referenced in the request URL
-        # TODO: request.user.id == user_id  (must implement user login/auth first)
-
         try:
             tailored_resume = TailoredResume.objects.create_from_params(
                 user_id=user_id,
