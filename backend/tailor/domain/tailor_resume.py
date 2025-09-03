@@ -299,13 +299,19 @@ class TailorPdf:
             text_offset = 0
             column_id = self._get_column_id(text_rect)
             if column_id is not None:
-                column_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
+                redacted_offset, redacted_rect_index = self.calculate_text_rect_offset(redacted_rect_index, text_rect)
 
                 column = self.column_data[column_id]
-                column["offset"] += column_offset
+                current_column_offset = column["offset"]
+                text_rect_with_redacted_offset = self._get_rect(text_block, current_column_offset + redacted_offset)
+                # TODO account for self.page_break_rects
+                page_break_offset = self.maybe_correct_for_page_break(text_rect_with_redacted_offset)
+
+                corrected_offset = redacted_offset - page_break_offset
+                column = self.column_data[column_id]
+                column["offset"] += corrected_offset
                 text_offset = column["offset"]
 
-            # TODO account for self.page_break_rects
             repositioned_text_rect = self._get_rect(text_block, text_offset)
 
             if self.out_of_bounds(repositioned_text_rect):
@@ -364,7 +370,7 @@ class TailorPdf:
         current_redacted_rect_index = redacted_rect_index
         # we add the y distance between the top and bottom of our redacted rect before progressing
         # to the next one, repeating as long as our current text block is below a redacted rect in the same column
-        while text_block_rect.y0 >= self.redacted_rects[current_redacted_rect_index].y1:
+        while text_block_rect.y0 >= self.redacted_rects[current_redacted_rect_index].y0:
 
             redacted_offset += self.redacted_rects[current_redacted_rect_index].height
             current_redacted_rect_index += 1
@@ -380,6 +386,38 @@ class TailorPdf:
                 break
 
         return redacted_offset, current_redacted_rect_index
+
+    def maybe_correct_for_page_break(self, rect: pymupdf.Rect):
+        """
+        Here are the rules:
+        1. If it is not intersecting with the top or bottom then return 0 and continue as normal
+        2. If the bottom of the rect is intersecting with the top of the page break:
+            break text_block into overlapping lines
+            shunt overlapping lines down below the page break
+            reduce final offset by non-overlap amount (page_break + (page_break.y0- rect.y0))
+        3. If the top of the rect is intersecting with the bottom of the page break:
+            shunt overlapping lines down below the page break
+            reduce final offset by overlap amount (page_break.y1- rect.y0)
+            # TODO For scenario 2: right now we are shunting down the entire text_block and are not accounting for when only one line
+            # TODO future versions should consider identifying only the offending line that is over the line and then splitting that line
+            # TODO and offseting by only that much
+        """
+        overlapping_page_break = None
+        for page_break in self.page_break_rects:
+            if page_break.intersects(rect):
+                overlapping_page_break = page_break
+                break
+
+        if not overlapping_page_break:
+            return 0
+
+        # bottom of rect overlapping footer
+        if rect.y0 < overlapping_page_break.y0:
+            distance_from_top_of_rect_to_top_of_footer = overlapping_page_break.y0 - rect.y0
+            return overlapping_page_break.height + distance_from_top_of_rect_to_top_of_footer
+        else: # top of rect overlapping header
+            distance_from_top_of_rect_to_bottom_of_header = overlapping_page_break.y1 - rect.y0
+            return distance_from_top_of_rect_to_bottom_of_header
 
     def isolate_repositioned_rect(self, repositioned_rect, redacted_pdf, template_rect):
         """
@@ -436,8 +474,11 @@ class TailorPdf:
                 rect_below_repositioned_rect
         ):
             interim_page_unified.add_redact_annot(redact_rect)
+            # annot.clean_contents()
+
 
         interim_page_unified.apply_redactions()
+        interim_page_unified.clean_contents()
         interim_pdf_unified.reload_page(interim_page_unified)
         return interim_pdf_unified
 
@@ -473,6 +514,8 @@ class TailorPdf:
                 unified_pdf,
                 clip=unified_page_rect
             )
+
+            # resume_page.clean_contents()
 
         return tailored_resume
 
