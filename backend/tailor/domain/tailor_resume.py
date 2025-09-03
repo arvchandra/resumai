@@ -1,3 +1,6 @@
+import io
+import tempfile
+
 import numpy as np
 from sklearn.cluster import DBSCAN
 from collections import defaultdict
@@ -573,4 +576,7 @@ class TailorPdf:
         return combined_rect
 
     def tailor_pdf_in_bytes(self):
-        return self.tailored_resume.tobytes()
+        tailored_resume = self.tailored_resume
+        tailored_resume.subset_forms()
+        return tailored_resume.tobytes(garbage=3, deflate=True, use_objstms=1)
+
