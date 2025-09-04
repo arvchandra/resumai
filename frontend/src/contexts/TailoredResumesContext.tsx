@@ -39,7 +39,7 @@ function tailoredResumesReducer(state: TailoredResumesState, action: ResumesActi
     const newTailoredResumes = [...state.tailoredResumes];
     return {
       ...state,
-      tailoredResumes: [...newTailoredResumes, action.payload],
+      tailoredResumes: [action.payload, ...newTailoredResumes],
     }
   }
   if (action.type == "SET_ERROR") {
