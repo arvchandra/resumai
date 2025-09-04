@@ -1,4 +1,4 @@
-export default interface Resume {
+export type Resume = {
   id: number;
   name: string;
   is_default: boolean;

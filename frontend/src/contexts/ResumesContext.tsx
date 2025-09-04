@@ -2,7 +2,7 @@ import React, { createContext, useContext, useReducer } from "react";
 
 import { useResumeApi } from "../api/resumeApi.ts";
 
-import type Resume from "../interfaces/Resume";
+import type { Resume } from "../types/Resume.ts";
 
 interface ResumesState {
   resumes: Resume[];

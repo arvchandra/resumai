@@ -4,15 +4,17 @@ import ResumeSelector from "../ResumeSelector/ResumeSelector";
 import TailoredResumeTable from "../TailoredResumeTable/TailoredResumeTable";
 import useUploadResumeFile from "../../hooks/useUploadResumeFile";
 import { useResumesContext } from "../../contexts/ResumesContext";
+import { useTailoredResumesContext } from "../../contexts/TailoredResumesContext.tsx";
 import { useResumeApi } from "../../api/resumeApi.ts";
 
 import "./ResumeTailorForm.css";
-import type Resume from "../../interfaces/Resume";
+import type { Resume } from "../../types/Resume.ts";
 
 type ResumeToTailor = Resume | null;
 
 export default function ResumeTailorForm() {
   const { selectedResume, tempUploadedResumeFile, setTempUploadedResumeFile, fetchResumes } = useResumesContext();
+  const { addNewTailoredResume } = useTailoredResumesContext();
   const { isUploading: isUploadingResume, uploadTemporaryFile } = useUploadResumeFile();
   const { tailorUserResume } = useResumeApi();
 
@@ -56,7 +58,7 @@ export default function ResumeTailorForm() {
       }
 
       const data = await response.json();
-      console.log(data);
+      addNewTailoredResume(data["tailoredResume"]);
 
       // Fetch user resumes if this tailoring request
       // involved uploading the user's first resume.

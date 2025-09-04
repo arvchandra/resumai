@@ -1,16 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
 import type { CustomCellRendererProps } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
-import DownloadCellRenderer from './DownloadCellRenderer.tsx';
 import type {
   SizeColumnsToFitGridStrategy,
   SizeColumnsToFitProvidedWidthStrategy,
   SizeColumnsToContentStrategy
 } from 'ag-grid-community';
 
-import { useResumeApi } from "../../api/resumeApi.ts";
+import { useTailoredResumesContext } from "../../contexts/TailoredResumesContext.tsx";
+import DownloadCellRenderer from './DownloadCellRenderer.tsx';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -42,9 +42,10 @@ const colDefs: ColDef[] = [
 ];
 
 export default function TailoredResumeTable() {
-  const { getTailoredUserResumes } = useResumeApi();
-
-  const [rowData, setRowData] = useState<RowData[]>([]);
+  const {
+    tailoredResumes,
+    fetchTailoredResumes,
+  } = useTailoredResumesContext();
 
   const autoSizeStrategy = useMemo<
     | SizeColumnsToFitGridStrategy
@@ -55,30 +56,9 @@ export default function TailoredResumeTable() {
   }), [],
   );
 
+  // Fetch tailored resumes on initial load
   useEffect(() => {
-    const fetchTailoredResumeData = async () => {
-      try {
-        const response = await getTailoredUserResumes();
-        const tailoredResumeData = await response.json();
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch tailored resumes");
-        }
-
-        if (!Array.isArray(tailoredResumeData)) {
-          throw new Error("Tailored resume response improperly formatted");
-        }
-
-        // TODO switch from typecasting once we have landed on a final table format
-        if (tailoredResumeData) {
-          setRowData(tailoredResumeData as RowData[]);
-        }
-      } catch (err) {
-        console.error('Fetch error:', err);
-      }
-    };
-
-    fetchTailoredResumeData();
+    fetchTailoredResumes();
   }, []);
 
   return (
@@ -86,7 +66,7 @@ export default function TailoredResumeTable() {
       <label>Tailored Resumes:</label>
       <div className="grid" style={{ height: 200 }}>
         <AgGridReact
-          rowData={rowData}
+          rowData={tailoredResumes as RowData[]}
           columnDefs={colDefs}
           autoSizeStrategy={autoSizeStrategy}
           domLayout="autoHeight"
