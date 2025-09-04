@@ -77,7 +77,7 @@ class TailoredResumeManager(models.Manager):
         e = tailored_resume_object.create_tailored_resume()
         if e:
             raise e
-        
+
         tailored_resume_in_bytes = tailored_resume_object.tailor_pdf_in_bytes()
         tailored_resume_file = ContentFile(tailored_resume_in_bytes, name=name)
 

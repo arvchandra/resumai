@@ -249,9 +249,6 @@ class TailorPdf:
         """
         text_including_bullet = self.unified_template_page.get_textbox(redacted_rect)
         text_including_bullet_rects = self.unified_template_page.search_for(text_including_bullet)
-        if not text_including_bullet_rects:
-            raise ValueError(f"what the hell is going on? Why is there no rects for {text_including_bullet} here? : {redacted_rect}")
-
         text_including_bullet_combined_rect = self._combine_rects(text_including_bullet_rects)
 
         redacted_rect.y0 = min(redacted_rect.y0, text_including_bullet_combined_rect.y0)
