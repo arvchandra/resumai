@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import AppRoutes from "./routes/AppRoutes";
 import { ResumesContextProvider } from "./contexts/ResumesContext";
+import { TailoredResumesContextProvider } from "./contexts/TailoredResumesContext";
 
 import "./App.css";
 import "./assets/styles/shared.css";
@@ -16,7 +17,9 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <ResumesContextProvider>
-            <AppRoutes />
+            <TailoredResumesContextProvider>
+              <AppRoutes />
+            </TailoredResumesContextProvider>
           </ResumesContextProvider>
         </BrowserRouter>
       </AuthProvider>

@@ -143,10 +143,11 @@ class TailorResumeView(APIView):
                 job_posting_url=job_posting_url
             )
 
+            tailored_resume_serializer = TailoredResumeSerializer(tailored_resume)
+            tailored_resume_json_data = {"tailoredResume": tailored_resume_serializer.data}
+            
             return Response(
-                {
-                    "tailored_resume_id": tailored_resume.id,
-                },
+                tailored_resume_json_data,
                 status=status.HTTP_201_CREATED
             )
         # TODO remove Exception from error handling here
