@@ -31,7 +31,7 @@ class TailorPdf:
             return
         except Exception as e:
             print(f"error: {e}")
-            return None
+            return e
 
     def generate_unified_pdf(self):
         """
@@ -201,7 +201,7 @@ class TailorPdf:
             rects_containing_bullet = template_page.search_for(bullet)
             redacted_rect = self._combine_rects(rects_containing_bullet)
 
-            if not redacted_rect:
+            if redacted_rect is None:
                 # TODO log that we couldnt find bullet point
                 continue
 
@@ -248,10 +248,11 @@ class TailorPdf:
         TODO make sure this doesn't break with two-column spacing
         """
         text_including_bullet = self.unified_template_page.get_textbox(redacted_rect)
-        text_including_bullet_rect = self._combine_rects(self.unified_template_page.search_for(text_including_bullet))
+        text_including_bullet_rects = self.unified_template_page.search_for(text_including_bullet)
+        text_including_bullet_combined_rect = self._combine_rects(text_including_bullet_rects)
 
-        redacted_rect.y0 = min(redacted_rect.y0, text_including_bullet_rect.y0)
-        redacted_rect.y1 = max(redacted_rect.y1, text_including_bullet_rect.y1)
+        redacted_rect.y0 = min(redacted_rect.y0, text_including_bullet_combined_rect.y0)
+        redacted_rect.y1 = max(redacted_rect.y1, text_including_bullet_combined_rect.y1)
 
     def maybe_add_line_break(self, redacted_rect: pymupdf.Rect):
         """
@@ -326,7 +327,8 @@ class TailorPdf:
             )
 
             interim_pdf_unified.close()
-
+        # close unified page since we don't need it anymore
+        self.unified_template_page.parent.close()
         return tailored_pdf_unified
 
     def calculate_text_rect_offset(self, redacted_rect_index: int, text_block_rect: pymupdf.Rect):
@@ -573,4 +575,7 @@ class TailorPdf:
         return combined_rect
 
     def tailor_pdf_in_bytes(self):
-        return self.tailored_resume.tobytes()
+        tailored_resume = self.tailored_resume
+        tailored_resume.subset_fonts()
+        return tailored_resume.tobytes(garbage=3, deflate=True, use_objstms=1)
+
