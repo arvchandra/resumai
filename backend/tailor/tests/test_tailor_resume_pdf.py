@@ -1,3 +1,6 @@
+import time
+from pathlib import Path
+
 import pymupdf
 import pytest
 
@@ -309,10 +312,20 @@ class TestTailorPdf:
         @pytest.mark.parametrize("resume_object", ["test_arvind_resume_extra_page.pdf"], indirect=True)
         def test_splits_unified_pdf_doesnt_include_empty_page(self, resume_object):
             bullets_to_redact = [
-               "WORK AUTHORIZATION U.S. Citizen",
+                "Arvind Chandra",
+                "Senior Software Engineer | Full-Stack Developer | U.S. Citizen",
+                "arvchandra@gmail.com | linkedin.com/in/arvchandra | (614) 477-8901",
+                "Senior Software Engineer with 8+ years of experience developing robust full-stack web applications using Python/Django and React. Passionate about cross-functional collaboration, translating business requirements into user-friendly features, analyzing data to drive insights, and delivering outstanding customer service through responsive incident resolution. Proven track record of success across fast-paced startups, digital journalism, and government consulting.",
+                "Led the rebuild of a complex Customer Survey application – designed the database schema, Django REST API, React/Typescript components, and unit/E2E tests for backend and frontend.",
+                "Led CMS development for high-traffic rankings platforms Cars, Travel, and Real Estate using Django and PostgreSQL.",
+                "Communicated with editors to identify inefficient processes - led to automating web scraping workflows that reduced data prep time for our editors from 5 days to 2 hours.",
+                "WORK AUTHORIZATION",
             ]
             tailor_pdf = TailorPdf(resume_object, bullets_to_redact)
-            tailor_pdf.create_tailored_resume()
+            e = tailor_pdf.create_tailored_resume()
+            if e:
+                raise e
+
             tailored_resume = tailor_pdf.tailored_resume
             assert tailored_resume.page_count == tailor_pdf.template_pdf_details["page_count"] - 1
 
