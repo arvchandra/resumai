@@ -327,8 +327,8 @@ class TailorPdf:
             )
 
             interim_pdf_unified.close()
-
-        redacted_page.parent.close()
+        # close unified page since we don't need it anymore
+        self.unified_template_page.parent.close()
         return tailored_pdf_unified
 
     def calculate_text_rect_offset(self, redacted_rect_index: int, text_block_rect: pymupdf.Rect):
