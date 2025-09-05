@@ -85,7 +85,7 @@ class TailoredResumeManager(models.Manager):
             "name": name,
             "company": company,
             "role": role,
-            # TODO need to return the formatted JobPosting url instead
+            # TODO need to return the formatted JobPosting url instead; V1
             "job_posting_url": job_posting_url,
             "file": tailored_resume_file,
             "template_resume": template_resume,

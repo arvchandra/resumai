@@ -89,7 +89,7 @@ class TailoredResumeDownloadView(APIView):
 
             return FileResponse(tailored_resume.file.open(), 'rb', as_attachment=True)
         except TailoredResume.DoesNotExist:
-            # TODO error handling
+            # TODO error handling; V1
             return Response(
                 {
                     "error": "File is not accessible"
@@ -97,7 +97,7 @@ class TailoredResumeDownloadView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         except TailoredResume.MultipleObjectsReturned:
-            # TODO error handling
+            # TODO error handling; V1
             return Response(
                     {
                         "error": "Could not retrieve correct file"
@@ -149,7 +149,7 @@ class TailorResumeView(APIView):
                 },
                 status=status.HTTP_201_CREATED
             )
-        # TODO remove Exception from error handling here
+        # TODO remove Exception from error handling here; V1
         except (ParsingError, ValidationError, Exception) as error:
             return Response(
                 {
