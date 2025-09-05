@@ -1,10 +1,13 @@
+import Tooltip from '@mui/material/Tooltip';
 import type { ICellRendererParams } from 'ag-grid-community';
 
 import { useResumeApi } from "../../api/resumeApi.ts";
 
 import fileDownloadIcon from "../../assets/images/download-file-icon.png";
+import linkedInIcon from "../../assets/images/linkedin-icon.png";
+import "./TailoredResumeTable.css";
 
-const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
+const ActionsCellRenderer = ({ data }: ICellRendererParams) => {
   const { downloadTailoredUserResume } = useResumeApi();
 
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
@@ -33,13 +36,26 @@ const DownloadCellRenderer = ({ data }: ICellRendererParams) => {
   };
 
   return (
-    <img
-      className="icon"
-      src={fileDownloadIcon}
-      alt="Download"
-      onClick={() => handleDownloadClick(data.id, data.name)}
-    />
+    <div className="actions-cell">
+      <Tooltip title="Download" placement="right" followCursor>
+        <img
+          className="icon"
+          src={fileDownloadIcon}
+          alt="Download"
+          onClick={() => handleDownloadClick(data.id, data.name)}
+        />
+      </Tooltip>
+      <Tooltip title={data.job_posting_url} placement="right" followCursor>
+        <img
+          className="icon"
+          src={linkedInIcon}
+          alt="LinkedIn Job Posting"
+          onClick={() => window.open(data.job_posting_url, "_blank", "noopener,noreferrer")}
+        />
+      </Tooltip>
+      <div>{data.company} - {data.role}</div>
+    </div>
   );
 };
 
-export default DownloadCellRenderer
+export default ActionsCellRenderer

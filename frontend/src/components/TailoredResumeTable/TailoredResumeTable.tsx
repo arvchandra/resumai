@@ -1,16 +1,17 @@
 import { useEffect, useMemo } from "react";
 
-import { AgGridReact } from 'ag-grid-react'; // React Data Grid Component
-import type { CustomCellRendererProps } from 'ag-grid-react';
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import type {
+  SizeColumnsToContentStrategy,
   SizeColumnsToFitGridStrategy,
-  SizeColumnsToFitProvidedWidthStrategy,
-  SizeColumnsToContentStrategy
-} from 'ag-grid-community';
+  SizeColumnsToFitProvidedWidthStrategy
+} from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+import type { CustomCellRendererProps } from "ag-grid-react";
+import { AgGridReact } from "ag-grid-react"; // React Data Grid Component
+import { format } from "date-fns";
 
 import { useTailoredResumesContext } from "../../contexts/TailoredResumesContext.tsx";
-import DownloadCellRenderer from './DownloadCellRenderer.tsx';
+import ActionsCellRenderer from "./ActionsCellRenderer.tsx";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -25,20 +26,11 @@ type ColDef = {
 }
 
 const colDefs: ColDef[] = [
-  { "field": 'name' },
-  { "field": 'company' },
-  { "field": 'role' },
   {
-    "field": 'job_posting_url',
-    "headerName": "Job",
-    "cellRenderer": jobPostingCellRenderer,
-  },
-  { "field": 'created_at' },
-  {
-    "field": 'download',
-    "cellRenderer": DownloadCellRenderer,
-    "width": 100
-  },
+    "field": "actions",
+    "headerName": "",
+    "cellRenderer": ActionsCellRenderer,
+  }
 ];
 
 export default function TailoredResumeTable() {
@@ -64,22 +56,23 @@ export default function TailoredResumeTable() {
   return (
     <div className="form-field">
       <label>Tailored Resumes:</label>
-      <div className="grid" style={{ height: 200 }}>
+      <div className="grid" style={{ height: 255 }}>
         <AgGridReact
           rowData={tailoredResumes as RowData[]}
           columnDefs={colDefs}
           autoSizeStrategy={autoSizeStrategy}
-          domLayout="autoHeight"
+          headerHeight={0}
         />
       </div>
     </div>
   );
 };
 
-function jobPostingCellRenderer({ data }: CustomCellRendererProps) {
+function dateCreatedCellRenderer({ data }: CustomCellRendererProps) {
+  const dateCreated = new Date(data.created_at);
+  const formattedDateCreated = format(dateCreated, "MMM do, yyyy");
+
   return (
-    <a href={data.job_posting_url} target="_blank" rel="noopener noreferrer">
-      Link
-    </a>
+    <span>{formattedDateCreated}</span>
   );
-};
+}
