@@ -68,7 +68,7 @@ class GoogleLoginView(APIView):
                 key="refreshToken",
                 value=refresh_token,
                 httponly=True,
-                secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
+                secure=False,  # TODO: Change this to true for Production (Only over HTTPS); V0
                 samesite="Lax",  # or "Strict"
                 expires=datetime.now() + timedelta(days=7),
                 path="/",  # Cookie can be access by any endpoint
@@ -115,7 +115,7 @@ class RefreshTokenView(APIView):
                 key="refreshToken",
                 value=new_refresh_token,
                 httponly=True,
-                secure=False,  # TODO: Change this to true for Production (Only over HTTPS)
+                secure=False,  # TODO: Change this to true for Production (Only over HTTPS); V0
                 samesite="Lax",  # or "Strict"
                 expires=datetime.now() + timedelta(days=7),
                 path="/",  # Cookie can be access by any endpoint
