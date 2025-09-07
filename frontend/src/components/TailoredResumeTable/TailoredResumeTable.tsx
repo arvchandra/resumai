@@ -71,38 +71,36 @@ export default function TailoredResumeTable() {
         .map((resume) => {
           return (
             <li className="resume-list-item" key={resume.id}>
-              <div className="actions-cell">
+              
+              {/* LinkedIn Job Posting Link Icon */}
+              <Tooltip
+                className="resume-list-item-content"
+                title={resume.job_posting_url}
+                placement="right"
+                followCursor
+              >
+                <img
+                  className="icon"
+                  src={linkedInIcon}
+                  alt="LinkedIn Job Posting"
+                  onClick={() => window.open(resume.job_posting_url, "_blank", "noopener,noreferrer")}
+                />
+              </Tooltip>
 
-                {/* LinkedIn Job Posting Link Icon */}
-                <Tooltip
-                  className="resume-list-item-content"
-                  title={resume.job_posting_url}
-                  placement="right"
-                  followCursor
-                >
-                  <img
-                    className="icon"
-                    src={linkedInIcon}
-                    alt="LinkedIn Job Posting"
-                    onClick={() => window.open(resume.job_posting_url, "_blank", "noopener,noreferrer")}
-                  />
-                </Tooltip>
+              {/* Tailored Resume Link Button */}
+              <Tooltip
+                className="resume-list-item-content"
+                title={`${resume.company} - ${resume.role}`}
+                placement="bottom"
+                followCursor
+                enterDelay={1000}
+                enterNextDelay={1000}
+              >
+                <div className="resume-link-btn" onClick={() => handleDownloadClick(resume.id, resume.name)}>
+                  {resume.company} - {resume.role}
+                </div>
+              </Tooltip>
 
-                {/* Tailored Resume Link Button */}
-                <Tooltip
-                  className="resume-list-item-content"
-                  title={`${resume.company} - ${resume.role}`}
-                  placement="bottom"
-                  followCursor
-                  enterDelay={1000}
-                  enterNextDelay={1000}
-                >
-                  <div className="resume-link-btn" onClick={() => handleDownloadClick(resume.id, resume.name)}>
-                    {resume.company} - {resume.role}
-                  </div>
-                </Tooltip>
-
-              </div>
             </li>
           );
         });

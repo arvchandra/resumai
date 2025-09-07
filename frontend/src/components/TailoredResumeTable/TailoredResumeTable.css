@@ -23,6 +23,10 @@
 }
 
 .resume-list-item {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
   padding-left: 0.5rem;
   border-bottom: 1px solid #ccc;
   min-height: 40px;
@@ -30,13 +34,6 @@
 
 .resume-list-item-content {
   padding: 0.5rem 0;
-}
-
-.actions-cell {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
 }
 
 .resume-link-btn {
