@@ -21,7 +21,6 @@ export default function TailoredResumeTable() {
 
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
     try {
-      // TODO replace with current user
       const response = await downloadTailoredUserResume(tailoredResumeId);
 
       if (!response.ok) {
