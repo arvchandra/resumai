@@ -5,7 +5,6 @@ import { useResumeApi } from "../../api/resumeApi.ts";
 
 import fileDownloadIcon from "../../assets/images/download-file-icon.png";
 import linkedInIcon from "../../assets/images/linkedin-icon.png";
-import "./TailoredResumeTable.css";
 
 const ActionsCellRenderer = ({ data }: ICellRendererParams) => {
   const { downloadTailoredUserResume } = useResumeApi();
@@ -47,13 +46,13 @@ const ActionsCellRenderer = ({ data }: ICellRendererParams) => {
       </Tooltip>
       <Tooltip title={data.job_posting_url} placement="right" followCursor>
         <img
-          className="icon"
+          className="icon list-item-content"
           src={linkedInIcon}
           alt="LinkedIn Job Posting"
           onClick={() => window.open(data.job_posting_url, "_blank", "noopener,noreferrer")}
         />
       </Tooltip>
-      <div>{data.company} - {data.role}</div>
+      <div className="link-btn list-item-content">{data.company} - {data.role}</div>
     </div>
   );
 };
