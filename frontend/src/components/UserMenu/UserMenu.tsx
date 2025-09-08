@@ -51,7 +51,7 @@ export default function UserMenu({ userInfo }: UserMenuProps) {
             </div>
           </div>
           <div className="menu-item" onClick={logout}>
-            <img className="icon menu-icon" src={logoutIcon} alt="logout" />Logout
+            <img className="icon" src={logoutIcon} alt="logout" />Logout
           </div>
         </div>
       )

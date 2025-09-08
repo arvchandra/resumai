@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 
 import Tooltip from '@mui/material/Tooltip';
+import { isToday, format } from "date-fns";
 
 import { useResumeApi } from "../../api/resumeApi.ts";
 import { useTailoredResumesContext } from "../../contexts/TailoredResumesContext.tsx";
 
 import linkedInIcon from "../../assets/images/linkedin-icon.png";
+import downloadIcon from "../../assets/images/download-file-icon.png";
+
 import "./TailoredResumeTable.css";
 
 export default function TailoredResumeTable() {
@@ -21,6 +24,7 @@ export default function TailoredResumeTable() {
 
   const handleDownloadClick = async (tailoredResumeId: number, tailoredResumeName: string) => {
     try {
+      // TODO replace with current user
       const response = await downloadTailoredUserResume(tailoredResumeId);
 
       if (!response.ok) {
@@ -50,32 +54,55 @@ export default function TailoredResumeTable() {
       tailoredResumes
         // Filter resumes based on search text
         .filter((resume) => {
-          let isMatch = false;
-
-          if (tailoredResumesSearchText) {
-            const searchTextLower = tailoredResumesSearchText.toLowerCase();
-            const companyLower = resume.company.toLowerCase();
-            const roleLower = resume.role.toLowerCase();
-
-            if (companyLower.includes(searchTextLower) || roleLower.includes(searchTextLower)) {
-              isMatch = true;
-            }
-          } else {
-            isMatch = true;
+          if (tailoredResumesSearchText === "") {
+            return true;
           }
 
-          return isMatch;
+          const searchTextLower = tailoredResumesSearchText.toLowerCase();
+          const companyLower = resume.company.toLowerCase();
+          const roleLower = resume.role.toLowerCase();
+          return (companyLower.includes(searchTextLower) || roleLower.includes(searchTextLower)) ? true : false;
         })
         // Render the filtered resumes
         .map((resume) => {
+          const dateCreated = new Date(resume.created_at);
+          const dateFormat = isToday(dateCreated) ? "h:mm aa" : "MMM d";
+          const formattedDateCreatedShort = format(dateCreated, dateFormat);
+          const formattedDateCreatedFull = format(dateCreated, "MMMM d, yyyy 'at' h:mm aa");
+
           return (
             <li className="resume-list-item" key={resume.id}>
+
+              {/* Tailored Resume Link Button: Opens in new tab */}
+              <Tooltip
+                className="resume-list-item-content"
+                title={`${resume.company} - ${resume.role}`}
+                placement="top"
+                followCursor
+                enterDelay={1000}
+                enterNextDelay={1000}
+              >
+                <div className="resume-link-btn" onClick={() => handleDownloadClick(resume.id, resume.name)}>
+                  {resume.company} - {resume.role}
+                </div>
+              </Tooltip>
+
+              {/* Created Date */}
+              <Tooltip
+                className="resume-list-item-content resume-date"
+                title={formattedDateCreatedFull}
+                placement="top"
+                followCursor
+              >
+                <span>{formattedDateCreatedShort}</span>
+              </Tooltip>
 
               {/* LinkedIn Job Posting Link Icon */}
               <Tooltip
                 className="resume-list-item-content"
-                title={resume.job_posting_url}
-                placement="right"
+                style={{ whiteSpace: 'pre-line' }}
+                title={<div>{`View job posting:\n${resume.job_posting_url}`}</div>}
+                placement="top"
                 followCursor
               >
                 <img
@@ -86,18 +113,19 @@ export default function TailoredResumeTable() {
                 />
               </Tooltip>
 
-              {/* Tailored Resume Link Button */}
+              {/* Download Icon: Downloads to disk */}
               <Tooltip
                 className="resume-list-item-content"
-                title={`${resume.company} - ${resume.role}`}
-                placement="bottom"
+                title="Download"
+                placement="top"
                 followCursor
-                enterDelay={1000}
-                enterNextDelay={1000}
               >
-                <div className="resume-link-btn" onClick={() => handleDownloadClick(resume.id, resume.name)}>
-                  {resume.company} - {resume.role}
-                </div>
+                <img
+                  className="icon"
+                  src={downloadIcon}
+                  alt="Download"
+                  onClick={() => handleDownloadClick(resume.id, resume.name)}
+                />
               </Tooltip>
 
             </li>
