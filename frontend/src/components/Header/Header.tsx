@@ -9,7 +9,8 @@ export default function Header() {
 
   return (
     <div className="header">
-      <div>ResumAI Logo</div>
+      <div style={{width: "35px"}}></div>
+      <div className="header-title">ResumAI</div>
       {userInfo && <UserMenu userInfo={userInfo} />}
     </div>
   )
