@@ -70,7 +70,7 @@ export default function TailoredResumeTable() {
         .map((resume) => {
           return (
             <li className="resume-list-item" key={resume.id}>
-              
+
               {/* LinkedIn Job Posting Link Icon */}
               <Tooltip
                 className="resume-list-item-content"
