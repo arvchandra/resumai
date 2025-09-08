@@ -10,7 +10,7 @@ class TestResume:
     ], indirect=True)
     def test_resumes_get_text_passes_for_all_file_types(self, db, resume_object):
         resume = resume_object
-        # TODO add expected response doc to compare text
+        # TODO add expected response doc to compare text; V1
         assert resume.get_text() != ""
 
 

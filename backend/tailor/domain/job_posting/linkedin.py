@@ -31,7 +31,7 @@ class LinkedInPosting(JobPosting):
             # When the URL is anything else
             raise ParsingError("Unable to parse job posting")
         except (AttributeError, TypeError) as e:
-            # TODO log error
+            # TODO log error; V1 logging
             raise e
 
     def get_text(self):

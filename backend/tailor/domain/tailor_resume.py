@@ -50,7 +50,6 @@ class TailorPdf:
         page_height = template_pdf[0].rect.height
 
         if not all((page_count, page_width, page_height)):
-            # TODO Error Handling
             raise KeyError("error when attempting to calculate template pdf dimensions")
 
         self.template_pdf_details = {
@@ -112,15 +111,15 @@ class TailorPdf:
             ...
         }
 
-        TODO: Determine if we need to worry about footer text in resumes; if not, extend column rects to floor
-        TODO: Determine if we should calculate column spacing for each page
+        TODO: Determine if we need to worry about footer text in resumes; if not, extend column rects to floor; V1
+        TODO: Determine if we should calculate column spacing for each page; V1
         """
 
         text_blocks = template_page_unified.get_text("blocks")
         X = np.array(
             [(x0, x1) for x0, y0, x1, y1, text, block_no, block_type in text_blocks]
         )
-        # TODO improve calculation for epsilon
+        # TODO improve calculation for epsilon; V1 wait until we get results of sample resumes
         dbscan = DBSCAN(eps=self.template_pdf_details["width"]//6)
         dbscan.fit(X)
         cluster_labels = dbscan.labels_
@@ -202,7 +201,7 @@ class TailorPdf:
             redacted_rect = self._combine_rects(rects_containing_bullet)
 
             if redacted_rect is None:
-                # TODO log that we couldnt find bullet point
+                # TODO log that we couldnt find bullet point; V1 logging
                 continue
 
             self.format_redacted_rect(redacted_rect)
@@ -210,8 +209,8 @@ class TailorPdf:
             self.redacted_rects.append(redacted_rect)
             template_page.add_redact_annot(redacted_rect)
 
-        # TODO remove once OpenAI Response is correctly sorting the bullet points
-        # TODO account for column
+        # TODO remove once OpenAI Response is correctly sorting the bullet points; V0
+        # TODO account for column; V0
         self.redacted_rects = sorted(self.redacted_rects, key=lambda rect: rect.y0)
 
         result = template_page.apply_redactions()
@@ -245,7 +244,7 @@ class TailorPdf:
         Now that's we've extended our rect borders to the width, we should be able to capture any bullet symbols
         with get_textbox and reconfigure the height
 
-        TODO make sure this doesn't break with two-column spacing
+        TODO make sure this doesn't break with two-column spacing; V1 after testing with batch resumes
         """
         text_including_bullet = self.unified_template_page.get_textbox(redacted_rect)
         text_including_bullet_rects = self.unified_template_page.search_for(text_including_bullet)
@@ -261,8 +260,8 @@ class TailorPdf:
         will allow us to account for it later when we are repositioning the text below it.
         If we do not find any text below our redacted rect, we return the redacted rect as is
 
-        TODO ensure that we are only checking one lines worth and are not accidentally hitting the next job experience
-        TODO verify that this approach works for most resumes (i.e. bullet line spacing is < the height of a bullet point)
+        TODO ensure that we are only checking one lines worth and are not accidentally hitting the next job experience; V0 Priority
+        TODO verify that this approach works for most resumes (i.e. bullet line spacing is < the height of a bullet point); V1 batch testing
         """
 
         # use a negative offset to generate a rect of the same size underneath and the +1 to avoid intersection
@@ -272,7 +271,6 @@ class TailorPdf:
         if not text_underneath_redacted_rect.strip():  # checks if there is only whitespace
             return
 
-        # TODO verify that we won't encounter duplicate text that could be present elsewhere
         # by rebuilding our rect by searching for the text we found, we can ensure we are not including the line
         # break spacing between our redacted rect and this text just below it.
         nearest_rect_containing_text = self.unified_template_page.search_for(text_underneath_redacted_rect)[0]
@@ -403,7 +401,7 @@ class TailorPdf:
             return overlap amount (page_break.y1- rect.y0)
 
             # TODO For scenario 2: right now we are shunting down the entire text_block even if its only one line over
-            # TODO future versions should consider splitting off the offending line and offseting by only that much
+            # TODO future versions should consider splitting off the offending line and offseting by only that much; V0-V1 priority
         """
         overlapping_page_break = None
         for page_break in self.page_break_rects:
@@ -535,7 +533,7 @@ class TailorPdf:
                 column_id = col_id
                 break
 
-        #TODO raise error or None if found in all
+        #TODO raise error or None if found in all; V0
         return column_id
 
     @staticmethod
