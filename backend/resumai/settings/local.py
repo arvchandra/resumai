@@ -5,7 +5,7 @@ from .base import *
 
 # Retrieve environment variables from .env file
 # and persist them in project settings.
-env = environ.Env
+env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, ".env.local"))
 
 # Set environment variables 
