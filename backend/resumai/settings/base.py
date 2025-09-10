@@ -9,19 +9,11 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-import environ
 from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Retrieve environment variables from .env file
-# and persist them in project settings.
-env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
 
 # JSON Web Token (JWT) settings
 SIMPLE_JWT = {
@@ -30,7 +22,6 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
 }
-
 
 # Application definition
 
