@@ -41,7 +41,7 @@ def fetch_openai_response(resume, job_posting_url: str):
 
 
 def fetch_job_posting_text(job_posting_url: str):
-    # TODO create JobPostingFactory
+    # TODO create JobPostingFactory; V1
     if "linkedin.com" not in job_posting_url:
         raise ValidationError("Invalid job posting URL. Must be from www.linkedin.com")
 
