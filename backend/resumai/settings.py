@@ -41,13 +41,12 @@ SIMPLE_JWT = {
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-to4l5j2v7ha*+!btj715!qhcla$$v7ramm6z0u_8z-c4*=o7ts"
+SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(env("DEBUG", default=0))
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [env("DJANGO_ALLOWED_HOSTS"), "localhost", "127.0.0.1"]
 
 # Application definition
 
@@ -99,14 +98,16 @@ WSGI_APPLICATION = "resumai.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "resumai",
-        "USER": "resumai",
-        "PASSWORD": "password",
-        "HOST": "localhost",
-        "PORT": "5432",
-    }
+    'default': {
+         'ENGINE': 'django.db.backends.{}'.format(
+             env('DATABASE_ENGINE')
+         ),
+         'NAME': env('DATABASE_NAME'),
+         'USER': env('DATABASE_USERNAME', default='resumai'),
+         'PASSWORD': env('DATABASE_PASSWORD', default='password'),
+         'HOST': env('DATABASE_HOST', default='127.0.0.1'),
+         'PORT': env('DATABASE_PORT', default=5432),
+     }
 }
 
 if os.environ.get('GITHUB_WORKFLOW'):
