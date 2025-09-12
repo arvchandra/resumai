@@ -1,7 +1,7 @@
 import environ
 import os
 
-from .base import *
+from .base import *  # noqa
 
 # Retrieve environment variables from .env file
 # and persist them in project settings.
