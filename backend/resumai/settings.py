@@ -41,12 +41,12 @@ SIMPLE_JWT = {
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ.get("DEBUG", default=0))
+DEBUG = bool(env("DEBUG", default=0))
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1").split(",")
+ALLOWED_HOSTS = [env("DJANGO_ALLOWED_HOSTS"), "localhost", "127.0.0.1"]
 
 # Application definition
 
@@ -100,13 +100,13 @@ WSGI_APPLICATION = "resumai.wsgi.application"
 DATABASES = {
     'default': {
          'ENGINE': 'django.db.backends.{}'.format(
-             os.getenv('DATABASE_ENGINE', 'sqlite3')
+             env('DATABASE_ENGINE')
          ),
-         'NAME': os.getenv('DATABASE_NAME', 'resumai'),
-         'USER': os.getenv('DATABASE_USERNAME', 'resumai'),
-         'PASSWORD': os.getenv('DATABASE_PASSWORD', 'password'),
-         'HOST': os.getenv('DATABASE_HOST', '127.0.0.1'),
-         'PORT': os.getenv('DATABASE_PORT', 5432),
+         'NAME': env('DATABASE_NAME'),
+         'USER': env('DATABASE_USERNAME', default='resumai'),
+         'PASSWORD': env('DATABASE_PASSWORD', default='password'),
+         'HOST': env('DATABASE_HOST', default='127.0.0.1'),
+         'PORT': env('DATABASE_PORT', default=5432),
      }
 }
 
