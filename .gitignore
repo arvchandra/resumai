@@ -6,3 +6,10 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# Environment
+.env
+.venv/
+env/
+venv/
+ENV/
