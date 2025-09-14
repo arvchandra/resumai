@@ -99,10 +99,8 @@ WSGI_APPLICATION = "resumai.wsgi.application"
 
 DATABASES = {
     'default': {
-         'ENGINE': 'django.db.backends.{}'.format(
-             env('DATABASE_ENGINE')
-         ),
-         'NAME': env('DATABASE_NAME'),
+         'ENGINE': 'django.db.backends.postgresql',
+         'NAME': env('DATABASE_NAME', default='resumai'),
          'USER': env('DATABASE_USERNAME', default='resumai'),
          'PASSWORD': env('DATABASE_PASSWORD', default='password'),
          'HOST': env('DATABASE_HOST', default='127.0.0.1'),
