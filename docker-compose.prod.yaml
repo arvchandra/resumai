@@ -14,8 +14,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # TODO: Change Postgres login for Prod
   api:
-    build: ./backend
+    build: 
+      context: ./backend
+      args:
+          APP_ENV: production
     ports:
       - "8000:8000"
     depends_on:
@@ -23,7 +27,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/backend
-    env_file: "./backend/resumai/.env"
+    env_file: "./backend/resumai/.env.local"
   web:
     build: ./frontend
     ports:

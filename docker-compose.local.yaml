@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  api:
+    build: 
+      context: ./backend
+      args:
+          APP_ENV: local
+    command:  # Facilitates debugging in containers (only run on local Docker)
+      >
+      python -m debugpy --listen 0.0.0.0:5678
+      manage.py runserver 0.0.0.0:8000 
+    ports:
+      - "8000:8000"   # Django
+      - "5678:5678"   # Debugger
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/backend
+    env_file: "./backend/resumai/.env.local"
+  web:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/frontend
+      - /frontend/node_modules
+    environment:
+      - NODE_ENV=development
+volumes:
+   postgres_data:
