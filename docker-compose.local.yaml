@@ -30,7 +30,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/backend
-    env_file: "./backend/resumai/.env.local"
+    env_file: ./backend/resumai/.env.local
   web:
     build: 
       context: ./frontend
@@ -43,6 +43,6 @@ services:
     environment:
       - NODE_ENV=development
     env_file:
-      - .env.local
+      - ./frontend/.env.local
 volumes:
    postgres_data:
