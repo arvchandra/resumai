@@ -17,8 +17,7 @@ services:
   api:
     build: 
       context: ./backend
-      args:
-          APP_ENV: local
+      target: local
     command:  # Facilitates debugging in containers (only run on local Docker)
       >
       python -m debugpy --listen 0.0.0.0:5678
@@ -33,7 +32,9 @@ services:
       - ./backend:/backend
     env_file: "./backend/resumai/.env.local"
   web:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      target: local
     ports:
       - "3000:3000"
     volumes:
@@ -41,5 +42,7 @@ services:
       - /frontend/node_modules
     environment:
       - NODE_ENV=development
+    env_file:
+      - .env.local
 volumes:
    postgres_data:
