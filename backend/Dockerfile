@@ -33,7 +33,7 @@ CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
 
 
 # Production ONLY: Run the gunicorn/wsgi server -------------------
-FROM base as prod
+FROM base AS production
 
 # Install Python dependencies for production environment
 COPY requirements.txt ./

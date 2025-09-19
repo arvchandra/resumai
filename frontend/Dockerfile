@@ -29,7 +29,7 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 
 # Production ONLY: Build the application and run via nginx -------
-FROM base as build
+FROM base AS build
 
 # Runs the Vite build script (in package.json),
 # which builds the optimized production files.
@@ -37,10 +37,10 @@ RUN npm run build
 
 
 # Nginx for serving static files
-FROM nginx:stable-alpine AS prod
+FROM nginx:stable-alpine AS production
 
 # Copy built frontend files to nginx html folder
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /frontend/dist /usr/share/nginx/html
 
 # Replace default nginx config.
 # This enables the nginx to handle React routing
