@@ -5,10 +5,15 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from appropriate file (.env.local or .env.prod)
-ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
+# Check if running in Docker container
+IS_RUNNING_IN_CONTAINER = False
+if os.getenv("IS_RUNNING_IN_CONTAINER"):
+    IS_RUNNING_IN_CONTAINER = True
+
+# Load environment variables from file (only for local development)
+# If file not available, env() reads from runtime environment (i.e. Docker)
 env = environ.Env()
-env_file = os.path.join(BASE_DIR, f".env.{ENVIRONMENT}")
+env_file = os.path.join(BASE_DIR, f".env.local")
 if os.path.exists(env_file):
     env.read_env(env_file)
 
@@ -78,10 +83,10 @@ DATABASES = {
          "ENGINE": "django.db.backends.{}".format(
              os.getenv("DATABASE_ENGINE", "sqlite3")
          ),
-         "NAME": env("DATABASE_NAME", default="resumai"),
-         "USER": env("DATABASE_USERNAME", default="resumai"),
-         "PASSWORD": env("DATABASE_PASSWORD", default="password"),
-         "HOST": env("DATABASE_HOST", default="127.0.0.1"),
+         "NAME": env("POSTGRES_DB", default="resumai"),
+         "USER": env("POSTGRES_USER", default="resumai"),
+         "PASSWORD": env("POSTGRES_PASSWORD", default="password"),
+         "HOST": "db" if IS_RUNNING_IN_CONTAINER else env("DATABASE_HOST", default="localhost"),
          "PORT": env("DATABASE_PORT", default=5432),
      }
 }
@@ -90,9 +95,9 @@ if os.environ.get("GITHUB_WORKFLOW"):
     DATABASES = {
         "default": {
            "ENGINE": "django.db.backends.postgresql",
-           "NAME": "github_actions",
-           "USER": "postgres",
-           "PASSWORD": "postgres",
+           "NAME": env("GIT_POSTGRES_DB"), # Retrieved from Github Secrets/Variables
+           "USER": env("GIT_POSTGRES_USER"),# Retrieved from Github Secrets/Variables
+           "PASSWORD": env("GIT_POSTGRES_PASSWORD"),# Retrieved from Github Secrets/Variables
            "HOST": "127.0.0.1",
            "PORT": "5432",
         }
@@ -133,8 +138,6 @@ AUTH_PASSWORD_VALIDATORS = [
 MEDIA_ROOT = BASE_DIR / "uploads"
 
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True

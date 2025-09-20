@@ -1,10 +1,8 @@
 services:
   db:
     image: postgres:17-alpine
-    environment:
-      POSTGRES_DB: ${DATABASE_NAME}
-      POSTGRES_USER: ${DATABASE_USERNAME}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    # env file must define POSTGRES_DB, POSTGRES_USER, and POSTGRES_PASSWORD
+    env_file: ./backend/.env.local
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
@@ -29,8 +27,9 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/backend
-    env_file: ./backend/.env.local
+      - ./backend:/backend # bind-mount syncs all files in folder, ignores .dockerignore rules
+    environment:
+      IS_RUNNING_IN_CONTAINER: "true"
   web:
     build: 
       context: ./frontend
@@ -38,10 +37,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/frontend
+      - ./frontend:/frontend # bind-mount syncs all files in folder, ignores .dockerignore rules
       - /frontend/node_modules
     environment:
       NODE_ENV: development
-    env_file: ./frontend/.env.local
 volumes:
    postgres_data:
