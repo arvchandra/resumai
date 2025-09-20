@@ -90,7 +90,7 @@ class RefreshTokenView(APIView):
         try:
             refresh_token_object = RefreshToken(refresh_token)
             user_id = refresh_token_object["user_id"]
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(id=user_id) # TODO: Handle when token user does not exist
 
             # Rotate/generate refresh token (JSON Web Token)
             # and access token.

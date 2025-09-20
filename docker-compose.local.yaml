@@ -15,23 +15,33 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
   api:
-    build: ./backend
+    build: 
+      context: ./backend
+      target: local
+    command:  # Facilitates debugging in containers (only run on local Docker)
+      >
+      python -m debugpy --listen 0.0.0.0:5678
+      manage.py runserver 0.0.0.0:8000 
     ports:
-      - "8000:8000"
+      - "8000:8000"   # Django
+      - "5678:5678"   # Debugger
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./backend:/backend
-    env_file: "./backend/resumai/.env"
+    env_file: ./backend/.env.local
   web:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      target: local
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/frontend
       - /frontend/node_modules
     environment:
-      - NODE_ENV=development
+      NODE_ENV: development
+    env_file: ./frontend/.env.local
 volumes:
    postgres_data:
