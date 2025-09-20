@@ -1,5 +1,87 @@
-# .dockerignore
-
-.venv
+# =========================
+# Git
+# =========================
 .git
 .gitignore
+.github/
+
+# =========================
+# Python / Django
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+*.log
+*.pot
+*.mo
+output.txt
+db.sqlite3
+media/
+staticfiles/
+uploads/
+
+# =========================
+# Node / React / Vite
+# =========================
+node_modules/
+dist/
+dist-ssr/
+build/
+.cache/
+.next/
+*.local
+
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.*
+.venv/
+env/
+venv/
+ENV/
+secrets/
+*.pem
+*.key
+*.crt
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =========================
+# Editors / IDEs
+# =========================
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================
+# OS / System files
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =========================
+# Misc / Temporary
+# =========================
+*.bak
+*.tmp
+*.orig
