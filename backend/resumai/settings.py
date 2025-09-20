@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from appropriate file (.env.local or .env.prod)
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 env = environ.Env()
-env_file = os.path.join(BASE_DIR, f"resumai/.env.{ENVIRONMENT}")
+env_file = os.path.join(BASE_DIR, f".env.{ENVIRONMENT}")
 if os.path.exists(env_file):
     env.read_env(env_file)
 

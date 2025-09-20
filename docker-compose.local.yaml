@@ -30,7 +30,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/backend
-    env_file: ./backend/resumai/.env.local
+    env_file: ./backend/.env.local
   web:
     build: 
       context: ./frontend
