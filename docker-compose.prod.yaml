@@ -34,8 +34,7 @@ services:
     volumes:
       - /frontend/node_modules
     environment:
-      - NODE_ENV=production
-    env_file:
-      - ./frontend/.env.prod
+      NODE_ENV: production
+    env_file: ./frontend/.env.prod
 volumes:
    postgres_data:

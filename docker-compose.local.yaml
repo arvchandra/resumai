@@ -41,8 +41,7 @@ services:
       - ./frontend:/frontend
       - /frontend/node_modules
     environment:
-      - NODE_ENV=development
-    env_file:
-      - ./frontend/.env.local
+      NODE_ENV: development
+    env_file: ./frontend/.env.local
 volumes:
    postgres_data:
