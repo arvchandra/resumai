@@ -13,7 +13,7 @@ if os.getenv("IS_RUNNING_IN_CONTAINER"):
 # Load environment variables from file (only for local development)
 # If file not available, env() reads from runtime environment (i.e. Docker)
 env = environ.Env()
-env_file = os.path.join(BASE_DIR, f".env.local")
+env_file = os.path.join(BASE_DIR, ".env.local")
 if os.path.exists(env_file):
     env.read_env(env_file)
 
