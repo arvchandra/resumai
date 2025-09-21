@@ -25,9 +25,9 @@ jobs:
       postgres:
         image: postgres:latest
         env: # Retrieved from Github Secrets/Variables
-          POSTGRES_DB: ${GIT_POSTGRES_DB}
-          POSTGRES_USER: ${GIT_POSTGRES_USER}
-          POSTGRES_PASSWORD: ${GIT_POSTGRES_PASSWORD}
+          POSTGRES_DB: ${{ vars.GIT_POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.GIT_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.GIT_POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
