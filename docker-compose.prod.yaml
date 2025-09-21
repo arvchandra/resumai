@@ -1,9 +1,9 @@
 services:
   db:
     image: postgres:17-alpine
-    environment:
+    environment: # Retrieved from Github Secrets/Variables
       POSTGRES_DB: ${DATABASE_NAME}
-      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
@@ -14,7 +14,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # TODO: Change Postgres login for Prod
   api:
     build: 
       context: ./backend
@@ -24,7 +23,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    env_file: ./backend/.env.prod
+    environment: # Retrieved from Github Secrets/Variables
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEBUG: ${DEBUG}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      DATABASE_ENGINE: ${DATABASE_ENGINE}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
   web:
     build: 
       context: ./frontend
@@ -35,6 +45,7 @@ services:
       - /frontend/node_modules
     environment:
       NODE_ENV: production
-    env_file: ./frontend/.env.prod
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      VITE_GOOGLE_OAUTH_CLIENT_ID: ${VITE_GOOGLE_OAUTH_CLIENT_ID}
 volumes:
    postgres_data:

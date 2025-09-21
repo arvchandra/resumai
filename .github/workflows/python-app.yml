@@ -24,10 +24,10 @@ jobs:
     services:
       postgres:
         image: postgres:latest
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: github_actions
+        env: # Retrieved from Github Secrets/Variables
+          POSTGRES_DB: ${{ vars.GIT_POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.GIT_POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.GIT_POSTGRES_PASSWORD }}
         ports:
           - 5432:5432
         # needed because the postgres container does not provide a healthcheck
@@ -45,6 +45,9 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Run migrations
       env:
+        POSTGRES_DB: ${{ vars.GIT_POSTGRES_DB }}
+        POSTGRES_USER: ${{ vars.GIT_POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.GIT_POSTGRES_PASSWORD }}
         DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.VITE_GOOGLE_OAUTH_CLIENT_ID }}
@@ -56,6 +59,9 @@ jobs:
       continue-on-error: true
     - name: Test with pytest
       env:
+        POSTGRES_DB: ${{ vars.GIT_POSTGRES_DB }}
+        POSTGRES_USER: ${{ vars.GIT_POSTGRES_USER }}
+        POSTGRES_PASSWORD: ${{ secrets.GIT_POSTGRES_PASSWORD }}
         DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.VITE_GOOGLE_OAUTH_CLIENT_ID }}
