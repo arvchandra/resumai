@@ -95,10 +95,10 @@ if os.environ.get("GITHUB_WORKFLOW"):
     DATABASES = {
         "default": {
            "ENGINE": "django.db.backends.postgresql",
-           "NAME": env("GIT_POSTGRES_DB"), # Retrieved from Github Secrets/Variables
-           "USER": env("GIT_POSTGRES_USER"),# Retrieved from Github Secrets/Variables
-           "PASSWORD": env("GIT_POSTGRES_PASSWORD"),# Retrieved from Github Secrets/Variables
-           "HOST": "127.0.0.1",
+           "NAME": env("POSTGRES_DB"), # Retrieved from Github Secrets/Variables
+           "USER": env("POSTGRES_USER"), # Retrieved from Github Secrets/Variables
+           "PASSWORD": env("POSTGRES_PASSWORD"), # Retrieved from Github Secrets/Variables
+           "HOST": "localhost",
            "PORT": "5432",
         }
     }
